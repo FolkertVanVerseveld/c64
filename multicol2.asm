@@ -74,6 +74,7 @@
 	sta $0528
 	lda #'?'
 	sta $0529
+loop:
 	jmp loop
 tbl:
 	.byte 129, 37, 21, 29, 93, 85, 85, 85
