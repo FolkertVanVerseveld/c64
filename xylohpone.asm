@@ -1,4 +1,4 @@
-// converted from BASIC from the Commodore 64 Programmer's reference guide page 185
+// converted from BASIC from the Commodore 64 Programmer's reference guide page 198
 .pc = $0801 "Basic Upstart Program"
 :BasicUpstart($0810)
 
