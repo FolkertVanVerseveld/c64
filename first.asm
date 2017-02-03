@@ -1,3 +1,8 @@
+.var brkFile = createFile("breakpoints.txt")
+.macro break() {
+.eval brkFile.writeln("break " + toHexString(*))
+}
+
 .pc = $0801 "Basic Upstart Program"
 :BasicUpstart($0810)
 
@@ -25,7 +30,7 @@ kernel:
 	jsr dot_move
 	ldx #'*'
 	jsr dot_draw
-	ldx #$08
+	ldx #$04
 	jsr idle
 	jmp kernel
 
@@ -57,17 +62,18 @@ idle:
 dot_move:
 	// determine if bottom is hit
 	lda dot_pos + 1
-	cmp #(screen + 24 * 40) >> 8
+	cmp #(screen + 25 * 40) >> 8
 	bcc !ignore+
+	jsr flip_y
+!ignore:
+	// determine if top is hit
+	lda dot_pos + 1
+	cmp #(screen >> 8) + 1
+	bpl !ignore+
 	lda dot_pos
-	cmp #(screen + 24 * 40) & 255 // cmp #$c0
-	bcc !ignore+
-	// brk
-	lda dot_dir
-	clc
-	adc #3
-	and #3
-	sta dot_dir
+	cmp #40
+	bcs !ignore+
+	jsr flip_y
 !ignore:
 	// load move vector
 	ldy dot_dir
@@ -86,40 +92,24 @@ dot_move:
 	sta dot_pos + 1
 	rts
 
-//	clc             // add lower byte
-//	adc dot_pos     // of pos to vector
-//	sta dot_pos     // store lower byte
-//	lda dot_pos + 1 // load high byte of pos
-//	adc #0
-//	sta dot_pos + 1
-//	rts
-
-//	bmi dec_high
-//	bpl inc_high
-//	// do nothing
-//	rts
-//dec_high:
-//	dec dot_pos + 1 // decrement high byte
-//	rts
-//inc_high:
-//	inc dot_pos + 1 // increment high byte
-//	rts
-
-//	adc #0          // add carry to high byte
-//	sta dot_pos + 1
-//	rts
+flip_y:
+	ldx dot_dir
+	lda flip_y_tbl, x
+	sta dot_dir
+	rts
 
 // dot data
 dot_pos:
-	.word screen + 7 * 40 + 3
-	//.word screen + 8 * 40 + 23
+	.word screen + 8 * 40 + 23
 dot_dir:
 	.byte 0
+dot_oldch:
+	.byte ' '
 // read-only data
 dot_dtbl:
 	.byte 41, 39, -41, -39
-dot_oldch:
-	.byte ' '
+flip_y_tbl:
+	.byte 3, 2, 1, 0
 
 // zero sid registers
 clear_sid:
