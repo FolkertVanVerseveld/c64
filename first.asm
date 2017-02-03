@@ -20,23 +20,55 @@
 	sta $d016      //
 	jsr clear_sid
 
+// drawing kernel
+kernel:
 	jsr dot_move
+	ldx #'*'
 	jsr dot_draw
-
-!loop:
-	jmp !loop-
+	ldx #$08
+	jsr idle
+	jmp kernel
 
 dot_draw:
+	// compute pointer to dot
 	lda dot_pos
 	sta !scrptr+ + 1
 	lda dot_pos  + 1
 	sta !scrptr+ + 2
-	lda #'*'
+	txa
 !scrptr:
 	sta screen
 	rts
 
+// wait the specified number of frames
+// X: number of frames to wait
+// destroys: NZV, X
+idle:
+!wait:
+	bit $d011
+	bpl !wait-
+!wait:
+	bit $d011
+	bmi !wait-
+	dex
+	bpl idle
+	rts
+
 dot_move:
+	// determine if bottom is hit
+	lda dot_pos + 1
+	cmp #(screen + 24 * 40) >> 8
+	bcc !ignore+
+	lda dot_pos
+	cmp #(screen + 24 * 40) & 255 // cmp #$c0
+	bcc !ignore+
+	// brk
+	lda dot_dir
+	clc
+	adc #3
+	and #3
+	sta dot_dir
+!ignore:
 	// load move vector
 	ldy dot_dir
 // http://www.codebase64.org/doku.php?id=base:signed_8bit_16bit_addition
@@ -79,11 +111,15 @@ dot_move:
 
 // dot data
 dot_pos:
-	.word screen + 1 * 40 + 2
+	.word screen + 7 * 40 + 3
+	//.word screen + 8 * 40 + 23
 dot_dir:
 	.byte 0
+// read-only data
 dot_dtbl:
 	.byte 41, 39, -41, -39
+dot_oldch:
+	.byte ' '
 
 // zero sid registers
 clear_sid:
@@ -94,15 +130,3 @@ clear_sid:
 	dex
 	bpl !loop-
 	rts
-
-/*
-// unused stuff
-// restore processor port
-restore:
-	lda #%00110111
-	sta $1
-// wait forever
-!loop:
-	brk
-	jmp !loop-
-*/
