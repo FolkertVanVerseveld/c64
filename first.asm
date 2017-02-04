@@ -15,6 +15,10 @@
 
 // breakout effect
 
+/*******************************************/
+/********* INITIALIZATION ROUTINE  *********/
+/*******************************************/
+
 	// make sure we enter known processor state
 	cld            // disable decimal mode
 	lda #%00110110 // setup processor port and
@@ -25,8 +29,12 @@
 	sta $d016      //
 	jsr clear_sid
 	jsr dot_save
+	// fall through into kernel
 
-// drawing kernel
+/*******************************************/
+/********* KERNEL DRAWING ROUTINES *********/
+/*******************************************/
+
 kernel:
 	// restore dot
 	ldx dot_oldch
@@ -35,34 +43,13 @@ kernel:
 	jsr dot_save
 	ldx #'*'
 	jsr dot_draw
+	// wait 4 frames
 	ldx #$04
 	jsr idle
 	jmp kernel
 
-dot_save:
-	// compute pointer to dot
-	lda dot_pos
-	sta !scrptr+ + 1
-	lda dot_pos  + 1
-	sta !scrptr+ + 2
-!scrptr:
-	lda screen
-	sta dot_oldch
-	rts
-
-dot_draw:
-	// compute pointer to dot
-	lda dot_pos
-	sta !scrptr+ + 1
-	lda dot_pos  + 1
-	sta !scrptr+ + 2
-	txa
-!scrptr:
-	sta screen
-	rts
-
 // wait the specified number of frames
-// X: number of frames to wait
+// input   : X: number of frames to wait
 // destroys: NZV, X
 idle:
 !wait:
@@ -75,8 +62,39 @@ idle:
 	bpl idle
 	rts
 
+/*******************************************/
+/******** MOVING CHARACTER ROUTINES ********/
+/*******************************************/
+
+// save character under the moving dot
+dot_save:
+	// compute pointer to dot
+	lda dot_pos
+	sta !scrptr+ + 1
+	lda dot_pos  + 1
+	sta !scrptr+ + 2
+!scrptr:
+	lda screen
+	sta dot_oldch
+	rts
+
+// draw a character at the position of the moving dot
+// input: X: the character to draw
+dot_draw:
+	// compute pointer to dot
+	lda dot_pos
+	sta !scrptr+ + 1
+	lda dot_pos  + 1
+	sta !scrptr+ + 2
+	txa
+!scrptr:
+	sta screen
+	rts
+
 dot_move:
+	// TODO check formulas
 	// determine if bottom is hit
+	// compare dot_pos with $07c0
 	lda dot_pos + 1
 	cmp #(screen + 25 * 40) >> 8
 	bcc !ignore+
@@ -85,7 +103,9 @@ dot_move:
 	bcc !ignore+
 	jsr flip_y
 !ignore:
+	// TODO check formulas
 	// determine if top is hit
+	// compare dot_pos with $0428
 	lda dot_pos + 1
 	cmp #(screen >> 8) + 1
 	bcs !ignore+
@@ -94,8 +114,7 @@ dot_move:
 	bcs !ignore+
 	jsr flip_y
 !ignore:
-	// fetch page where dot is located
-	//lda dot_pos + 1
+// now comes the tricky part, check if a horizontal collision has occurred
 // if the dot is on the left side the least significant nibble of the lower byte is 0 or 8
 	lda dot_pos
 	// get lower nibble
@@ -127,6 +146,8 @@ dot_move:
 	sta dot_pos + 1
 	rts
 
+// dot may or may not be at the left border
+// this routine checks if it does and calls flip_x to flip the horizontal direction
 dot_chk_left:
 	lda dot_pos + 1
 	sec
@@ -149,6 +170,9 @@ dot_chk_left:
 	bpl !loop-
 	jmp !update-
 
+// dot may or may not be at the left border
+// this routine checks if it does and calls flip_x to flip the horizontal direction
+// NOTE it is the same as dot_chk_left except for the line marked with `<-'
 dot_chk_right:
 	lda dot_pos + 1
 	sec
@@ -161,7 +185,7 @@ dot_chk_right:
 	ldx #7
 !loop:
 	dey
-	lda border_right_tbl, y
+	lda border_right_tbl, y // <-
 	cmp dot_pos
 	bne !next+
 	jsr flip_x
@@ -184,15 +208,25 @@ flip_x:
 	rts
 
 // dot data
+// NOTE dot cannot start next to a border because it may change the
+//      direction in such a way that it will move out of the screen!
 dot_pos:
-	.word screen + 70
-	.word screen + random() * 100
+	.word screen + 41 + 40 * (random() * 20) + random() * 40
 dot_dir:
-	.byte 0
 	.byte random() * 4
 dot_oldch:
 	.byte ' '
 // read-only data
+// dot delta table
+// a dot can only move diagonally
+// a screen row is 40 characters, so 40 + 1 results in (x + 1, y + 1)
+
+// all directions:
+//  0    1    2    3
+// \      /  +-    -+
+//  \|  |/   |\    /|
+//  -+  +-     \  /
+//
 dot_dtbl:
 	.byte 41, 39, -41, -39
 flip_y_tbl:
