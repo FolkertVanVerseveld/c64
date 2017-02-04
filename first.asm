@@ -24,15 +24,31 @@
 	lda #%11001000 // disable multicolor
 	sta $d016      //
 	jsr clear_sid
+	jsr dot_save
 
 // drawing kernel
 kernel:
+	// restore dot
+	ldx dot_oldch
+	jsr dot_draw
 	jsr dot_move
+	jsr dot_save
 	ldx #'*'
 	jsr dot_draw
 	ldx #$04
 	jsr idle
 	jmp kernel
+
+dot_save:
+	// compute pointer to dot
+	lda dot_pos
+	sta !scrptr+ + 1
+	lda dot_pos  + 1
+	sta !scrptr+ + 2
+!scrptr:
+	lda screen
+	sta dot_oldch
+	rts
 
 dot_draw:
 	// compute pointer to dot
@@ -64,12 +80,15 @@ dot_move:
 	lda dot_pos + 1
 	cmp #(screen + 25 * 40) >> 8
 	bcc !ignore+
+	lda dot_pos
+	cmp #$c0
+	bcc !ignore+
 	jsr flip_y
 !ignore:
 	// determine if top is hit
 	lda dot_pos + 1
 	cmp #(screen >> 8) + 1
-	bpl !ignore+
+	bcs !ignore+
 	lda dot_pos
 	cmp #40
 	bcs !ignore+
@@ -100,9 +119,9 @@ flip_y:
 
 // dot data
 dot_pos:
-	.word screen + 8 * 40 + 23
+	.word screen + random() * 100
 dot_dir:
-	.byte 0
+	.byte random() * 4
 dot_oldch:
 	.byte ' '
 // read-only data
