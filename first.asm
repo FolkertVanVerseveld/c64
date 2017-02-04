@@ -67,10 +67,10 @@ dot_draw:
 idle:
 !wait:
 	bit $d011
-	bpl !wait-
+	bmi !wait-
 !wait:
 	bit $d011
-	bmi !wait-
+	bpl !wait-
 	dex
 	bpl idle
 	rts
