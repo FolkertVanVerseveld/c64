@@ -12,6 +12,7 @@
 .const colram = $d800
 .const vicbase = $d000
 .const sidbase = $d400
+.const fillrow = screen + 40
 
 // breakout effect
 
@@ -28,13 +29,33 @@
 	lda #%11001000 // disable multicolor
 	sta $d016      //
 	jsr clear_sid
-	jsr dot_save
+	// check if row contains non-space characters
+	// excluding first and last column
+	ldx #37
+	ldy #38
+!loop:
+	lda fillrow + 1, x
+	cmp #' '
+	bne !next+
+	dey
+!next:
+	dex
+	bpl !loop-
+	tya
+	bne !ignore+
+	// place * in center
+	lda #'*'
+	sta fillrow + 19
+	sta fillrow + 20
+!ignore:
+	jsr fill
 	// fall through into kernel
 
 /*******************************************/
 /********* KERNEL DRAWING ROUTINES *********/
 /*******************************************/
 
+	jsr dot_save
 kernel:
 	// restore dot
 	ldx dot_oldch
@@ -47,6 +68,61 @@ kernel:
 	ldx #$04
 	jsr idle
 	jmp kernel
+
+fill:
+	// search for first non-space character excluding first column
+	ldx #1
+!loop:
+	lda fillrow, x
+	cmp #' '
+	bne !store+
+	inx
+	cpx #40
+	bne !loop-
+!store:
+	stx fill_start
+	sta fill_start_ch
+	// search for last non-space character excluding last column
+	ldx #39
+!loop:
+	lda fillrow, x
+	cmp #' '
+	bne !store+
+	dex
+	bne !loop-
+!store:
+	stx fill_end
+	sta fill_end_ch
+fill_kernel:
+	// fill left
+	ldx fill_start
+	beq !ignore+
+	lda fill_start_ch
+	sta fillrow, x
+	dec fill_start
+!ignore:
+	// fill right
+	ldx fill_end
+	cpx #38
+	beq !ignore+
+	lda fill_end_ch
+	sta fillrow, x
+	inc fill_end
+!ignore:
+	// wait 8 frames
+	ldx #$08
+	jsr idle
+	jmp fill_kernel
+	rts
+
+fill_start:
+	.byte 0
+fill_start_ch:
+	.byte '*'
+fill_end:
+	.byte 0
+fill_end_ch:
+	.byte '*'
 
 // wait the specified number of frames
 // input   : X: number of frames to wait
