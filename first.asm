@@ -13,6 +13,7 @@
 .const vicbase = $d000
 .const sidbase = $d400
 .const fillrow = screen + 40
+.const dot_array_count = 8
 
 // breakout effect
 
@@ -56,17 +57,57 @@
 /*******************************************/
 
 kernel:
+	lda #0
+	sta dot_index
+!loop:
+	ldx dot_index
+	// load first dot
+	lda dot_array_posl, x
+	sta dot_pos
+	lda dot_array_posh, x
+	sta dot_pos + 1
+	lda dot_array_dir, x
+	sta dot_dir
+	lda dot_array_oldch, x
+	sta dot_oldch
+	lda dot_array_ch, x
+	sta dot_ch
+	// update dot
+	jsr dot_logic
+	// store first dot
+	ldx dot_index
+	lda dot_pos
+	sta dot_array_posl, x
+	lda dot_pos + 1
+	sta dot_array_posh, x
+	lda dot_dir
+	sta dot_array_dir, x
+	lda dot_oldch
+	sta dot_array_oldch, x
+	lda dot_ch
+	sta dot_array_ch, x
+	inx
+	stx dot_index
+	cpx #dot_array_count
+	bne !loop-
+	// wait 2 frames
+	ldx #$02
+	jsr idle
+	jmp kernel
+dot_index:
+	.byte 0
+
+dot_logic:
 	// restore dot
+	// FIXME does not work if multiple dots are overlapping
 	ldx dot_oldch
 	jsr dot_draw
+	// ^^^ see comment above ^^^
 	jsr dot_move
 	jsr dot_save
 	ldx dot_ch
 	jsr dot_draw
-	// wait 4 frames
-	ldx #$04
-	jsr idle
-	jmp kernel
+	rts
 
 fill:
 	// search for first non-space character excluding first column
@@ -119,9 +160,19 @@ fill_kernel:
 	jsr idle
 	cpy #2           // if left and right are not filled yet
 	bne fill_kernel  // continue fill_kernel
-	// setup dot position
-	lda fill_start_ch
-	sta dot_ch
+	// setup dot_array
+	ldx #dot_array_count / 2
+!loop:
+	lda fillrow + 1, x
+	sta dot_array_ch, x
+	dex
+	bpl !loop-
+	ldx #dot_array_count / 2
+!loop:
+	lda fillrow + 38 - dot_array_count / 2 - 1, x
+	sta dot_array_ch + dot_array_count / 2, x
+	dex
+	bpl !loop-
 	rts
 
 fill_start:
@@ -333,6 +384,31 @@ border_right_tbl:
 	.byte $17, $3F, $67, $8F, $B7, $DF, $DF, $DF
 	.byte $07, $2F, $57, $7F, $A7, $CF, $F7, $F7
 	.byte $1F, $47, $6F, $97, $BF, $E7, $E7, $E7
+
+dot_array_posl:
+.for (var i = 0; i < dot_array_count / 2; i++) {
+	.byte (fillrow + i + 1) & $ff
+}
+.for (var i = 0; i < dot_array_count / 2; i++) {
+	.byte (fillrow + 38 - i - 1) & $ff
+}
+dot_array_posh:
+.for (var i = 0; i < dot_array_count; i++) {
+	.byte (fillrow + i + 1) >> 8
+}
+dot_array_dir:
+.for (var i = 0; i < dot_array_count; i++) {
+	.byte mod(i, 4)
+	//.byte random() * 4
+}
+dot_array_oldch:
+.for (var i = 0; i < dot_array_count; i++) {
+	.byte ' '
+}
+dot_array_ch:
+.for (var i = 0; i < dot_array_count; i++) {
+	.byte '@'
+}
 
 // zero sid registers
 clear_sid:
