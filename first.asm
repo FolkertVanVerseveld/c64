@@ -55,14 +55,13 @@
 /********* KERNEL DRAWING ROUTINES *********/
 /*******************************************/
 
-	jsr dot_save
 kernel:
 	// restore dot
 	ldx dot_oldch
 	jsr dot_draw
 	jsr dot_move
 	jsr dot_save
-	ldx #'*'
+	ldx dot_ch
 	jsr dot_draw
 	// wait 4 frames
 	ldx #$04
@@ -94,13 +93,17 @@ fill:
 	stx fill_end
 	sta fill_end_ch
 fill_kernel:
+	// Y keeps track if left and right are filled
+	ldy #0
 	// fill left
 	ldx fill_start
 	beq !ignore+
 	lda fill_start_ch
 	sta fillrow, x
 	dec fill_start
+	dey
 !ignore:
+	iny
 	// fill right
 	ldx fill_end
 	cpx #38
@@ -108,11 +111,17 @@ fill_kernel:
 	lda fill_end_ch
 	sta fillrow, x
 	inc fill_end
+	dey
 !ignore:
+	iny
 	// wait 8 frames
 	ldx #$08
 	jsr idle
-	jmp fill_kernel
+	cpy #2           // if left and right are not filled yet
+	bne fill_kernel  // continue fill_kernel
+	// setup dot position
+	lda fill_start_ch
+	sta dot_ch
 	rts
 
 fill_start:
@@ -287,11 +296,13 @@ flip_x:
 // NOTE dot cannot start next to a border because it may change the
 //      direction in such a way that it will move out of the screen!
 dot_pos:
-	.word screen + 41 + 40 * (random() * 20) + random() * 40
+	.word fillrow + 1
 dot_dir:
 	.byte random() * 4
 dot_oldch:
 	.byte ' '
+dot_ch:
+	.byte '@'
 // read-only data
 // dot delta table
 // a dot can only move diagonally
