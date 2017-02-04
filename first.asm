@@ -94,6 +94,22 @@ dot_move:
 	bcs !ignore+
 	jsr flip_y
 !ignore:
+	// fetch page where dot is located
+	//lda dot_pos + 1
+// if the dot is on the left side the least significant nibble of the lower byte is 0 or 8
+	lda dot_pos
+	// get lower nibble
+	and #$f
+	cmp #$0
+	beq dot_chk_left
+	cmp #$8
+	beq dot_chk_left
+// if the dot is on the right side the least significant nibble of the lower byte is 7 or f
+	cmp #$7
+	beq dot_chk_right
+	cmp #$f
+	beq dot_chk_right
+!update:
 	// load move vector
 	ldy dot_dir
 // http://www.codebase64.org/doku.php?id=base:signed_8bit_16bit_addition
@@ -111,16 +127,66 @@ dot_move:
 	sta dot_pos + 1
 	rts
 
+dot_chk_left:
+	lda dot_pos + 1
+	sec
+	sbc #3
+	clc
+	rol
+	rol
+	rol
+	tax
+	dex
+!loop:
+	lda border_left_tbl, x
+	cmp dot_pos
+	bne !next+
+	jsr flip_x
+	jmp !update-
+!next:
+	dex
+	bpl !loop-
+	jmp !update-
+
+dot_chk_right:
+	lda dot_pos + 1
+	sec
+	sbc #3
+	clc
+	rol
+	rol
+	rol
+	tax
+	dex
+!loop:
+	lda border_right_tbl, x
+	cmp dot_pos
+	bne !next+
+	jsr flip_x
+	jmp !update-
+!next:
+	dex
+	bpl !loop-
+	jmp !update-
+
 flip_y:
 	ldx dot_dir
 	lda flip_y_tbl, x
 	sta dot_dir
 	rts
 
+flip_x:
+	ldx dot_dir
+	lda flip_x_tbl, x
+	sta dot_dir
+	rts
+
 // dot data
 dot_pos:
+	.word screen + 70
 	.word screen + random() * 100
 dot_dir:
+	.byte 0
 	.byte random() * 4
 dot_oldch:
 	.byte ' '
@@ -129,6 +195,28 @@ dot_dtbl:
 	.byte 41, 39, -41, -39
 flip_y_tbl:
 	.byte 3, 2, 1, 0
+flip_x_tbl:
+	.byte 1, 0, 3, 2
+// make sure each row is exactly 8 bytes
+// this makes it easier to lookup
+border_left_tbl:
+	// 4
+	.byte $00, $28, $50, $78, $A0, $C8, $F0, $00
+	// 5
+	.byte $18, $40, $68, $90, $B8, $E0, $E0, $00 // repeat last one to compensate
+	// 6
+	.byte $08, $30, $58, $80, $A8, $D0, $F8, $00
+	// 7
+	.byte $20, $48, $70, $98, $C0, $C0, $C0, $00
+border_right_tbl:
+	// 4
+	.byte $27, $4F, $77, $9F, $C7, $EF, $17, $00
+	// 5
+	.byte $3F, $67, $8F, $B7, $DF, $07, $07, $00 // repeat last one to compensate
+	// 6
+	.byte $2F, $57, $7F, $A7, $CF, $F7, $1F, $00
+	// 7
+	.byte $47, $6F, $97, $BF, $E7, $E7, $E7, $00
 
 // zero sid registers
 clear_sid:
