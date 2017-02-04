@@ -208,10 +208,10 @@ border_left_tbl:
 	.byte $08, $30, $58, $80, $A8, $D0, $F8, $F8
 	.byte $20, $48, $70, $98, $C0, $C0, $C0, $C0
 border_right_tbl:
-	.byte $27, $4F, $77, $9F, $C7, $EF, $17, $17
-	.byte $3F, $67, $8F, $B7, $DF, $07, $07, $07
-	.byte $2F, $57, $7F, $A7, $CF, $F7, $1F, $1F
-	.byte $47, $6F, $97, $BF, $E7, $E7, $E7, $E7
+	.byte $27, $4F, $77, $9F, $C7, $EF, $EF, $EF
+	.byte $17, $3F, $67, $8F, $B7, $DF, $DF, $DF
+	.byte $07, $2F, $57, $7F, $A7, $CF, $F7, $F7
+	.byte $1F, $47, $6F, $97, $BF, $E7, $E7, $E7
 
 // zero sid registers
 clear_sid:
