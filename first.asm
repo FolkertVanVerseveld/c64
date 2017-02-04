@@ -13,7 +13,7 @@
 .const vicbase = $d000
 .const sidbase = $d400
 .const fillrow = screen + 40
-.const dot_array_count = 8
+.const dot_array_count = 6
 
 // breakout effect
 
@@ -61,7 +61,7 @@ kernel:
 	sta dot_index
 !loop:
 	ldx dot_index
-	// load first dot
+	// load dot
 	lda dot_array_posl, x
 	sta dot_pos
 	lda dot_array_posh, x
@@ -74,7 +74,7 @@ kernel:
 	sta dot_ch
 	// update dot
 	jsr dot_logic
-	// store first dot
+	// store dot
 	ldx dot_index
 	lda dot_pos
 	sta dot_array_posl, x
@@ -86,16 +86,33 @@ kernel:
 	sta dot_array_oldch, x
 	lda dot_ch
 	sta dot_array_ch, x
+	// goto next dot
 	inx
 	stx dot_index
 	cpx #dot_array_count
 	bne !loop-
-	// wait 2 frames
-	ldx #$02
+	// wait 1 frame
+	ldx #$01
 	jsr idle
+	// increment timer
+	inc kernel_timer
+	beq nuke_dots
 	jmp kernel
+nuke_dots:
+	// assume dot_index == dot_array_count
+	dec dot_index
+!loop:
+	ldy dot_index
+	ldx dot_array_oldch, y
+	jsr dot_draw
+	dec dot_index
+	bpl !loop-
+hang:
+	jmp hang
 dot_index:
 	.byte 0
+kernel_timer:
+	.byte $40
 
 dot_logic:
 	// restore dot
@@ -399,7 +416,6 @@ dot_array_posh:
 dot_array_dir:
 .for (var i = 0; i < dot_array_count; i++) {
 	.byte mod(i, 4)
-	//.byte random() * 4
 }
 dot_array_oldch:
 .for (var i = 0; i < dot_array_count; i++) {
