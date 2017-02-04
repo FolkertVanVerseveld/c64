@@ -135,10 +135,11 @@ dot_chk_left:
 	rol
 	rol
 	rol
-	tax
-	dex
+	tay
+	ldx #7
 !loop:
-	lda border_left_tbl, x
+	dey
+	lda border_left_tbl, y
 	cmp dot_pos
 	bne !next+
 	jsr flip_x
@@ -156,10 +157,11 @@ dot_chk_right:
 	rol
 	rol
 	rol
-	tax
-	dex
+	tay
+	ldx #7
 !loop:
-	lda border_right_tbl, x
+	dey
+	lda border_right_tbl, y
 	cmp dot_pos
 	bne !next+
 	jsr flip_x
@@ -197,26 +199,19 @@ flip_y_tbl:
 	.byte 3, 2, 1, 0
 flip_x_tbl:
 	.byte 1, 0, 3, 2
-// make sure each row is exactly 8 bytes
-// this makes it easier to lookup
+// make sure each row is exactly 8 bytes, this makes it
+// easier to lookup. some rows have bytes that are repeated
+// at the end to compensate this.
 border_left_tbl:
-	// 4
-	.byte $00, $28, $50, $78, $A0, $C8, $F0, $00
-	// 5
-	.byte $18, $40, $68, $90, $B8, $E0, $E0, $00 // repeat last one to compensate
-	// 6
-	.byte $08, $30, $58, $80, $A8, $D0, $F8, $00
-	// 7
-	.byte $20, $48, $70, $98, $C0, $C0, $C0, $00
+	.byte $00, $28, $50, $78, $A0, $C8, $F0, $F0
+	.byte $18, $40, $68, $90, $B8, $E0, $E0, $E0
+	.byte $08, $30, $58, $80, $A8, $D0, $F8, $F8
+	.byte $20, $48, $70, $98, $C0, $C0, $C0, $C0
 border_right_tbl:
-	// 4
-	.byte $27, $4F, $77, $9F, $C7, $EF, $17, $00
-	// 5
-	.byte $3F, $67, $8F, $B7, $DF, $07, $07, $00 // repeat last one to compensate
-	// 6
-	.byte $2F, $57, $7F, $A7, $CF, $F7, $1F, $00
-	// 7
-	.byte $47, $6F, $97, $BF, $E7, $E7, $E7, $00
+	.byte $27, $4F, $77, $9F, $C7, $EF, $17, $17
+	.byte $3F, $67, $8F, $B7, $DF, $07, $07, $07
+	.byte $2F, $57, $7F, $A7, $CF, $F7, $1F, $1F
+	.byte $47, $6F, $97, $BF, $E7, $E7, $E7, $E7
 
 // zero sid registers
 clear_sid:
