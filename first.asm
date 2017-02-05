@@ -14,6 +14,7 @@
 .const sidbase = $d400
 .const fillrow = screen + 40
 .const dot_array_count = 6
+.const crack_count = 12
 
 // breakout effect
 
@@ -107,8 +108,53 @@ nuke_dots:
 	jsr dot_draw
 	dec dot_index
 	bpl !loop-
+// create crack
+crack_loop:
+	ldy crack_index
+	// compute pointer to character
+	lda crack_tbl_low, y
+	sta !ldptr+ + 1
+	lda crack_tbl_high, y
+	sta !ldptr+ + 2
+////////////////////////////////////////////
+// Add delta from crack_delta_tbl to stptr
+	ldx #$00
+	lda crack_delta_tbl, y
+	bpl !plus+
+	dex
+!plus:
+	clc
+	adc crack_tbl_low, y
+	sta crack_tbl_low, y
+	txa
+	adc crack_tbl_high, y
+	sta crack_tbl_high, y
+////////////////////////////////////////////
+	// compute pointer to destination
+	lda crack_tbl_low, y
+	sta !stptr+ + 1
+	lda crack_tbl_high, y
+	sta !stptr+ + 2
+!ldptr:
+	lda screen
+!stptr:
+	sta screen
+	ldx #$08
+	jsr idle
+	inc crack_index
+	lda crack_index
+	cmp #12
+	bne crack_loop
 hang:
 	jmp hang
+crack_index:
+	.byte 0
+crack_tbl_low:
+	.byte $12, $8b, $04, $7d, $7d, $7d, $6b, $e2, $e2, $5b, $ac, $ac
+crack_tbl_high:
+	.byte   4,   4,   5,   5,   5,   5,   6,   6,   6,   7,   7,   7
+crack_delta_tbl:
+	.byte  41, -40,  41, -40,  40,  80,  40, -40,  40, -40, -40,  40
 dot_index:
 	.byte 0
 kernel_timer:
@@ -116,7 +162,9 @@ kernel_timer:
 
 dot_logic:
 	// restore dot
-	// FIXME does not work if multiple dots are overlapping
+	// Does not work if multiple dots are overlapping.
+	// I tried to fix it at first, but then I had changed my mind
+	// and thought that I could use it for a simple crack effect
 	ldx dot_oldch
 	jsr dot_draw
 	// ^^^ see comment above ^^^
@@ -284,6 +332,7 @@ dot_move:
 !update:
 	// load move vector
 	ldy dot_dir
+// Add delta from dot_dtbl to dot_pos. See also:
 // http://www.codebase64.org/doku.php?id=base:signed_8bit_16bit_addition
 	ldx #$00
 	// load delta
@@ -323,7 +372,7 @@ dot_chk_left:
 	bpl !loop-
 	jmp !update-
 
-// dot may or may not be at the left border
+// dot may or may not be at the right border
 // this routine checks if it does and calls flip_x to flip the horizontal direction
 // NOTE it is the same as dot_chk_left except for the line marked with `<-'
 dot_chk_right:
