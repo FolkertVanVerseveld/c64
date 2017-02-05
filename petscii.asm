@@ -32,6 +32,54 @@
 	bne !loop-
 	ldx #$10
 	jsr idle
+	// enable 24 row mode
+	lda $d011
+	and #$F7
+	sta $d011
+
+	// scroll
+!scroll:
+	ldx #7
+!loop:
+	stx scrolly
+	lda $d011
+	and #$F8
+	clc
+	adc scrolly
+	sta $d011
+	ldx #$1
+	jsr idle
+	dec scrolly
+	ldx scrolly
+	bne !loop-
+	// FIXME flicker in double buffer scroll
+	lda blit_index
+	eor #$1
+	sta blit_index
+	beq setup_scr
+setup_scr2: // unused label, just for convenience
+	jsr shift_first_to_second
+	lda #%10010101
+	sta $d018
+	jmp !scroll-
+setup_scr:
+	jsr shift_second_to_first
+	lda #%00010101
+	sta $d018
+	jmp !scroll-
+hang:
+	jmp hang
+
+// index to blit the screen to
+// 0 == screen, 1 == screen2
+blit_index:
+	.byte 0
+
+/*******************************************/
+// old code
+	inc $d020
+	jsr shift
+	dec $d020
 // try to setup second buffer
 // copy first row
 	jsr shift_first_to_second
@@ -40,36 +88,8 @@
 
 	lda #%10010101
 	sta $d018
+/*******************************************/
 
-!loop:
-	jmp !loop-
-	// enable 24 row mode
-	lda $d011
-	and #$F7
-	sta $d011
-
-	// scroll
-!scroll:
-	ldx #6
-!loop:
-	stx scrolly
-	lda $d011
-	and #$F8
-	clc
-	adc scrolly
-	sta $d011
-	ldx #$04
-	jsr idle
-	dec scrolly
-	ldx scrolly
-	bne !loop-
-	// TODO double buffer scroll
-	inc $d020
-	jsr shift
-	dec $d020
-	jmp !scroll-
-hang:
-	jmp hang
 scrolly:
 	.byte 0
 /*******************************************/
@@ -88,7 +108,16 @@ shift_first_to_second:
 	sta screen2 + $2e8 - 40, x
 	dex
 	bne !loop-
+	// everything has been shifted
+	// now append last row from picture
+	ldx #39
+!loop:
+	lda repeat           , x
+	sta screen2 + 24 * 40, x
+	dex
+	bpl !loop-
 	rts
+
 shift_second_to_first:
 	ldx #0
 !loop:
@@ -102,6 +131,14 @@ shift_second_to_first:
 	sta screen  + $2e8 - 40, x
 	dex
 	bne !loop-
+	// everything has been shifted
+	// now append last row from picture
+	ldx #39
+!loop:
+	lda repeat           , x
+	sta screen  + 24 * 40, x
+	dex
+	bpl !loop-
 	rts
 
 shift:
