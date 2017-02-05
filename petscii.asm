@@ -52,6 +52,8 @@
 	dec scrolly
 	ldx scrolly
 	bne !loop-
+	lda scroll_timer
+	beq halt
 	// FIXME flicker in double buffer scroll
 	lda blit_index
 	eor #$1
@@ -66,32 +68,20 @@ setup_scr:
 	jsr shift_second_to_first
 	lda #%00010101
 	sta $d018
+	inc scroll_timer
 	jmp !scroll-
-hang:
-	jmp hang
+halt:
+	jmp halt
 
 // index to blit the screen to
 // 0 == screen, 1 == screen2
 blit_index:
 	.byte 0
 
-/*******************************************/
-// old code
-	inc $d020
-	jsr shift
-	dec $d020
-// try to setup second buffer
-// copy first row
-	jsr shift_first_to_second
-	jsr shift_second_to_first
-	jsr shift_first_to_second
-
-	lda #%10010101
-	sta $d018
-/*******************************************/
-
 scrolly:
 	.byte 0
+scroll_timer:
+	.byte $f0
 /*******************************************/
 /******** DOUBLE BUFFERING ROUTINES ********/
 /*******************************************/
