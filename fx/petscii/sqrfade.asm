@@ -22,7 +22,10 @@
 	sta $d018
 	jsr clear_sid
 	jsr idle
+	jsr fill
+	jmp done
 // main
+fill:
 	lda #160
 	// top row
 	ldx #39
@@ -38,8 +41,32 @@ btmrow:
 	sta screen + 24 * 40, x
 	dex
 	bpl !loop-
+	ldx #$04
 	jsr idle
-	jmp done
+	// update top row
+	clc
+	lda #40
+	adc toprow + 1
+	sta toprow + 1
+	bcc !no_inc+
+	inc toprow + 2
+!no_inc:
+	// update bottom row
+	sec
+	lda btmrow + 1
+	sbc #40
+	sta btmrow + 1
+	bcs !no_dec+
+	dec btmrow + 2
+!no_dec:
+	dec fill_y
+	beq !done+
+	jmp fill
+!done:
+	rts
+fill_y:
+	.byte 13
+
 done:
 	inc $d020
 	jmp done
@@ -51,6 +78,8 @@ idle:
 !wait:
 	bit $d011
 	bpl !wait-
+	dex
+	bpl idle
 	rts
 
 clear_sid:
