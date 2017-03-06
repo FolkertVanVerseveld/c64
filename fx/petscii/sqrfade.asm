@@ -23,22 +23,23 @@
 	jsr clear_sid
 	jsr idle
 // main
-	ldx #160 // filled square
-main:
-!strptr:
-	stx screen
-	// increment pointer
-	inc !strptr- + 1
-	bne !next+
-	inc !strptr- + 2
-!next:
+	lda #160
+	// top row
+	ldx #39
+!loop:
+toprow:
+	sta screen, x
+	dex
+	bpl !loop-
+	// bottom row
+	ldx #39
+!loop:
+btmrow:
+	sta screen + 24 * 40, x
+	dex
+	bpl !loop-
 	jsr idle
-	lda !strptr- + 2
-	cmp #$07
-	bne main
-	lda !strptr- + 1
-	cmp #$e8
-	bne main
+	jmp done
 done:
 	inc $d020
 	jmp done
