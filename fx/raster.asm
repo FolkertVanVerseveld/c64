@@ -18,9 +18,9 @@ idle:
 
 irq_init:
 	sei
-	lda #<irq
+	lda #<irq_begin
 	sta $0314
-	lda #>irq
+	lda #>irq_begin
 	sta $0315
 	asl $d019
 	lda #$7b
@@ -34,7 +34,38 @@ irq_init:
 	cli
 	rts
 
-irq:
+irq_begin:
+	lda #<irq_wedge
+	sta $0314
+	lda #>irq_wedge
+	sta $0315
+	inc $d012
+	lda #$01
+	sta $d019
+	tsx
+	cli
+
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+
+
+irq_wedge:
+	txs
+	ldx #$08
+!loop:
+	dex
+	bne !loop-
+	bit $00
+	lda $d012
+	cmp $d012
+	beq !delay+
+!delay:
 	lda $d021
 	sta raster_old
 	lda $d020
