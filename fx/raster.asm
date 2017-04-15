@@ -7,7 +7,7 @@
 .const colram  = $d800
 .const sidbase = $d400
 
-.const line_bar = $72
+.const line_bar = $90
 .const bar_delay = $10
 
 start:
@@ -44,7 +44,6 @@ irq_begin:
 	sta $d019
 	tsx
 	cli
-
 	nop
 	nop
 	nop
@@ -53,7 +52,6 @@ irq_begin:
 	nop
 	nop
 	nop
-
 
 irq_wedge:
 	txs
@@ -66,6 +64,11 @@ irq_wedge:
 	cmp $d012
 	beq !delay+
 !delay:
+	// stable code
+	ldx #$05
+!loop:
+	dex
+	bne !loop-
 	lda $d021
 	sta raster_old
 	lda $d020
@@ -77,10 +80,12 @@ irq_wedge:
 	sta $d020
 	sta $d021
 	// wait
-	ldx #$10
+	ldx #$08
 !loop:
 	dex
 	bne !loop-
+	nop
+	bit $00
 	dey
 	bne !loop2-
 
