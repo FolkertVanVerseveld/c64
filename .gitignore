@@ -1,3 +1,5 @@
+# VICE
+ExecuteOutputLog.txt
 # binaries
 *.prg
 *.sym
