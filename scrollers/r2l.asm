@@ -57,21 +57,17 @@ scroll:
 	bne !l-
 
 	// haal eentje op uit de rij
-!ptr:
+!textptr:
 	lda scroll_text
 	cmp #$ff
 	bne !nowrap+
-	// herstel ptr
-	lda #<scroll_text
-	sta !ptr- + 1
-	lda #>scroll_text
-	sta !ptr- + 2
+	jsr scroll_herstel
 !nowrap:
 	sta scroll_screen + 39
-	// werk ptr bij
-	inc !ptr- + 1
+	// werk text ptr bij
+	inc !textptr- + 1
 	bne !klaar+
-	inc !ptr- + 2
+	inc !textptr- + 2
 !klaar:
 	// pas horizontale verplaatsing toe
 	lda #$c0
@@ -79,10 +75,22 @@ scroll:
 	sta $d016
 	rts
 
+scroll_herstel:
+	// herstel ptr
+	lda #<scroll_text
+	sta !textptr- + 1
+	sta !ptr+ + 1
+	lda #>scroll_text
+	sta !textptr- + 2
+	sta !ptr+ + 2
+!ptr:
+	lda scroll_text
+	rts
+
 scroll_xpos:
 	.byte 0
 scroll_speed:
-	.byte 1
+	.byte 2
 scroll_char:
 	.byte 0
 scroll_text:
