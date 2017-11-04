@@ -5,8 +5,9 @@
 .var num1hi = $63
 .var num2lo = $64
 .var num2hi = $65
-.var resultlo = $66
-.var resulthi = $67
+.var reslo = $66
+.var reshi = $67
+.var delta = $68
 
 // 16-bit addition zero page
 
