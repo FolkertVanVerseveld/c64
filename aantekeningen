@@ -1,0 +1,5 @@
+houdt alignment goed in de gaten
+
+van fieserwolf:
+gebruik een buffer waarin je alle logica voor het volgende venster bepaalt
+en kopieer elke keer de buffer over naar je nieuwe frame
