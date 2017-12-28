@@ -17,7 +17,7 @@ start:
 	jsr irq_init
 	jmp *
 
-#import "irq.asm"
+#import "../irq/krnl1.asm"
 
 irq:
 	asl $d019
