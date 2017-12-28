@@ -5,7 +5,8 @@
 
 BasicUpstart2(start)
 
-.var irq_line = $e8
+.var irq_line_top = $30
+.var irq_line_bottom = $e8
 .var spr_data = $3000
 
 .var top_textptr = $0400
@@ -13,7 +14,7 @@ BasicUpstart2(start)
 
 .var music = LoadSid("Spijkerhoek.sid")
 
-.var debug = false
+.var debug = true
 
 	* = $0810 "multifx"
 
@@ -89,7 +90,7 @@ spr_init:
 	sta $d02b
 	rts
 
-irq:
+irq_bottom:
 	asl $d019
 	.if (debug) {
 	inc $d020
@@ -97,9 +98,46 @@ irq:
 	jsr scroll
 	jsr dance
 	jsr music.play
+
+	lda #<irq_top
+	sta $0314
+	lda #>irq_top
+	sta $0315
+
+	lda #irq_line_top
+	sta $d012
+
 	.if (debug) {
 	dec $d020
 	}
+	pla
+	tay
+	pla
+	tax
+	pla
+	rti
+
+irq_top:
+	asl $d019
+
+	inc $d020
+	nop
+	nop
+	nop
+	nop
+
+
+
+	lda #<irq_bottom
+	sta $0314
+	lda #>irq_bottom
+	sta $0315
+
+	lda #irq_line_bottom
+	sta $d012
+
+	dec $d020
+
 	pla
 	tay
 	pla
@@ -230,9 +268,9 @@ scrclr:
 irq_init:
 	// zet irq done
 	sei
-	lda #<irq
+	lda #<irq_bottom
 	sta $0314
-	lda #>irq
+	lda #>irq_bottom
 	sta $0315
 	// zorg dat de irq gebruikt wordt
 	asl $d019
@@ -257,7 +295,7 @@ irq_init:
 
 	// de onderste 8-bits van de interruptregel.
 	// dus: regel $80 (128)
-	lda #irq_line
+	lda #irq_line_top
 	sta $d012
 
 	// vanaf nu kunnen de interrupts gevuurd worden
@@ -396,6 +434,7 @@ scroll_text:
 	.print "music_init = $" + toHexString(music.init)
 	.print "music_play = $" + toHexString(music.play)
 
+	// sprite movement tables
 .align $100
 
 sinx:
