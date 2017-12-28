@@ -5,6 +5,8 @@
 
 BasicUpstart2(start)
 
+.var spr_data = $2000
+
 	* = $0810 "dancing"
 
 .function sinus(i, amplitude, center, noOfSteps) {
@@ -23,21 +25,21 @@ start:
 
 sprinit:
 	// setup sprite at $0340 (== 13 * 64)
-	lda #12
+	lda #(spr_data + 64 * 0) / 64
 	sta $07f8
-	lda #13
+	lda #(spr_data + 64 * 1) / 64
 	sta $07f9
-	lda #14
+	lda #(spr_data + 64 * 2) / 64
 	sta $07fa
 	// copy sprites
 	ldx #0
 !l:
 	lda m0spr,x
-	sta $0300,x
+	sta spr_data + 64 * 0,x
 	lda m1spr,x
-	sta $0340,x
+	sta spr_data + 64 * 1,x
 	lda m2spr,x
-	sta $0380,x
+	sta spr_data + 64 * 2,x
 	inx
 	cpx #64
 	bne !l-
@@ -91,8 +93,55 @@ dance:
 	stx m2p
 	rts
 
-#import "../lib/scrclr.asm"
-#import "../irq/krnl1.asm"
+scrclr:
+	ldx #0
+	lda #' '
+!l:
+	sta $0400,x
+	sta $0500,x
+	sta $0600,x
+	sta $06e8,x
+	inx
+	bne !l-
+	rts
+
+irq_init:
+	// zet irq klaar
+	sei
+	lda #<irq
+	sta $0314
+	lda #>irq
+	sta $0315
+	// zorg dat de irq gebruikt wordt
+	asl $d019
+
+	// geen idee wat dit precies doet
+	// het zet alle interrupts eerst uit en dan
+	// de volgende aan: timer a, timer b, flag pin, serial shift
+	lda #$7b
+	sta $dc0d
+
+	// zet raster interrupt aan
+	lda #$81
+	sta $d01a
+
+	// bit-7 van de te schrijven waarde is bit-8 van de interruptregel (hier 0)
+	// tekst mode (bit-5 uit)
+	// scherm aan (bit-4 aan)
+	// 25 rijen (bit-3 aan)
+	// y scroll = 3 (bits 0-2)
+	lda #$1b
+	sta $d011
+
+	// de onderste 8-bits van de interruptregel.
+	// dus: regel $80 (128)
+	lda #$30
+	sta $d012
+
+	// vanaf nu kunnen de interrupts gevuurd worden
+	cli
+
+	rts
 
 m0p:
 	.byte 0
@@ -178,6 +227,7 @@ m2spr:
 
 sinus:
 	// <- The fill functions takes two argument. 
+	.fill $100, round($90 + $40 * sin(toRadians(i * 360 / $100)))
 	.fill $100, round($90 + $40 * sin(toRadians(i * 360 / $100)))
 	// The number of bytes to fill and an expression to execute for each
 	// byte. 'i' is the byte number 
