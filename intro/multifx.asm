@@ -121,12 +121,9 @@ irq_top:
 	asl $d019
 
 	inc $d020
-	nop
-	nop
-	nop
-	nop
 
-
+	lda #%00011110
+	sta $d018
 
 	lda #<irq_bottom
 	sta $0314
@@ -443,3 +440,7 @@ sinx:
 siny:
 	.fill $100, round($90 + $40 * sin(toRadians(i * 360 / $100)))
 	.fill $100, round($90 + $40 * sin(toRadians(i * 360 / $100)))
+
+	* = $3800 "font data"
+
+	.import binary "aeg_collection_05.64c", 2
