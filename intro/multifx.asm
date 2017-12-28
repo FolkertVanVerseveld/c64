@@ -5,11 +5,15 @@
 
 BasicUpstart2(start)
 
-.var irq_line = $10
-.var spr_data = $2000
+.var irq_line = $e8
+.var spr_data = $3000
 
 .var top_textptr = $0400
 .var top_colptr = $d800
+
+.var music = LoadSid("Spijkerhoek.sid")
+
+.var debug = false
 
 	* = $0810 "multifx"
 
@@ -17,11 +21,15 @@ start:
 	jsr scrclr
 	jsr top_init
 	jsr spr_init
+	lda #music.startSong - 1
+	jsr music.init
 	jsr irq_init
+
 	// it's showtime!
 	lda #0
 	sta $d020
 	sta $d021
+
 	jmp *
 
 top_init:
@@ -36,13 +44,11 @@ top_init:
 
 !tbl:
 	.byte 11, 11, 12, 15
-	.byte 1, 1, 1, 1, 1, 3, 14, 6
-
+	.byte 1, 1, 1, 1, 3, 14, 6
 	.byte 14, 3, 1, 1, 1, 3, 14, 6
 	.byte 6, 14, 3, 1, 1, 1, 3, 14
-	
-	.byte 6, 14, 3, 1, 1, 1, 1, 1
-	.byte 15, 12, 11, 11
+	.byte 6, 14, 3, 1, 1, 1, 1
+	.byte 15, 12, 11, 11, 11
 
 spr_init:
 	// setup sprite at $0340 (== 13 * 64)
@@ -85,10 +91,15 @@ spr_init:
 
 irq:
 	asl $d019
-	//inc $d020
+	.if (debug) {
+	inc $d020
+	}
 	jsr scroll
 	jsr dance
-	//dec $d020
+	jsr music.play
+	.if (debug) {
+	dec $d020
+	}
 	pla
 	tay
 	pla
@@ -155,6 +166,7 @@ dance:
 	inx
 	inx
 	inx
+	inx
 	stx m0p
 	ldx m1p
 	lda sinx + $8, x
@@ -164,12 +176,14 @@ dance:
 	inx
 	inx
 	inx
+	inx
 	stx m1p
 	ldx m2p
 	lda sinx + $10, x
 	sta $d004
 	lda siny + $40, x
 	sta $d005
+	inx
 	inx
 	inx
 	inx
@@ -184,6 +198,7 @@ dance:
 	inx
 	inx
 	inx
+	inx
 	stx m3p
 	ldx m4p
 	lda #$10
@@ -192,6 +207,7 @@ dance:
 	sta $d008
 	lda siny + $40 + $80, x
 	sta $d009
+	inx
 	inx
 	inx
 	inx
@@ -335,25 +351,25 @@ m2spr:
 
 m3spr:
 	.byte %00000001, %11111100, %00000000
-	.byte %00000110, %00000011, %00000000
-	.byte %00001000, %00000000, %10000000
-	.byte %00010000, %00111000, %01000000
-	.byte %00100000, %11000110, %01000000
-	.byte %00100001, %00000001, %10000000
-	.byte %01000010, %00000000, %11111111
-	.byte %01000010, %00000000, %10000010
-	.byte %10000100, %00000000, %10000100
-	.byte %10000100, %00000000, %11111000
-	.byte %10000100, %00000000, %00000000
-	.byte %10000100, %00000000, %11111000
-	.byte %10000100, %00000000, %10000100
-	.byte %01000010, %00000000, %10000010
-	.byte %01000010, %00000000, %11111111
-	.byte %00100001, %00000001, %10000000
-	.byte %00100000, %11000110, %01000000
-	.byte %00010000, %00111000, %01000000
-	.byte %00001000, %00000000, %10000000
-	.byte %00000110, %00000011, %00000000
+	.byte %00000111, %11111111, %00000000
+	.byte %00001111, %11111111, %10000000
+	.byte %00011111, %11111111, %11000000
+	.byte %00111111, %11000111, %11000000
+	.byte %00111111, %00000001, %10000000
+	.byte %01111110, %00000000, %11111111
+	.byte %01111110, %00000000, %11111110
+	.byte %11111100, %00000000, %11111100
+	.byte %11111100, %00000000, %11111000
+	.byte %11111100, %00000000, %00000000
+	.byte %11111100, %00000000, %11111000
+	.byte %11111100, %00000000, %11111100
+	.byte %01111110, %00000000, %11111110
+	.byte %01111110, %00000000, %11111111
+	.byte %00111111, %00000001, %10000000
+	.byte %00111111, %11000111, %11000000
+	.byte %00011111, %11111111, %11000000
+	.byte %00001111, %11111111, %10000000
+	.byte %00000111, %11111111, %00000000
 	.byte %00000001, %11111100, %00000000
 	.byte 0
 
@@ -367,8 +383,18 @@ scroll_text:
 	.text "hello under construction 17! this is methos' little compofiller. "
 	.text "as always, my hardest problem on the c64 is to get started at all! "
 	.text "i'm still trying to wrap my head around irqs, sprites and lots of other stuff, so this is the best i can do for now... "
-	.text "greetings fly out to alcatraz, abyss connection, fairlight, fossil, genesis project, mon, prosonix, scs-trc and all other groups and sceners! "
+	.text "code by methos, music by evs. "
+
+	.text "greetings fly out to abyss connection, duncan, fairlight, fred, fossil, genesis project, miri-kat, monoceros, prosonix, scs-trc, stephan and all other groups and sceners! "
+	.text "have fun and see ya in 2018! .......      "
 	.byte $ff
+
+	* = music.location "music"
+
+	.fill music.size, music.getData(i)
+
+	.print "music_init = $" + toHexString(music.init)
+	.print "music_play = $" + toHexString(music.play)
 
 .align $100
 
