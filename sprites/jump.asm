@@ -75,19 +75,10 @@ sprinit:
 	sta $d010
 	rts
 
-scrclr:
-	ldx #0
-	lda #' '
-!l:
-	sta $0400,x
-	sta $0500,x
-	sta $0600,x
-	sta $06e8,x
-	inx
-	bne !l-
-	rts
-
+#import "../lib/scrclr.asm"
 #import "../irq/krnl1.asm"
+
+.align $40
 
 mouse:
 	.byte %00011110, %00000000, %01111000
