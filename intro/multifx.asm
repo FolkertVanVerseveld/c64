@@ -7,24 +7,39 @@ BasicUpstart2(start)
 
 .var irq_line_top = $30
 .var irq_line_bottom = $e8
-.var spr_data = $2800
+//.var spr_data = $2800
 
 .var top_textptr = $0400
 .var top_colptr = $d800
 
 .var music = LoadSid("Spijkerhoek.sid")
 
-.var debug = false
+//set variables and locations
+.var colours = $2400
+.var timing = $2500
+.var pattern = $2600
+.var buf = $2700
+.var colram = $d800
+
+.var vic = $4000
+.var bitmap = vic + 0
+.var screen = vic + $2000
+.var spr_data = vic + $2400
+.var font = vic + $3000
+
+.var debug = true
 
 	* = $0810 "multifx"
 
 start:
 	jsr scrclr
+	jsr scr_init
 	jsr top_init
 	jsr spr_init
+	jsr copy_buf_to_colram
 	lda #music.startSong - 1
 	jsr music.init
-	jsr irq_init
+	//jsr irq_init
 
 	// it's showtime!
 	lda #0
@@ -50,6 +65,33 @@ top_init:
 	.byte 6, 14, 3, 1, 1, 1, 3, 14
 	.byte 6, 14, 3, 1, 1, 1, 1
 	.byte 15, 12, 11, 11, 11
+
+scr_init:
+	//screen (colors12) at $2000    bitmap at $0000
+	lda #%10000000
+	sta $d018
+	// multicolor (bit 4), 40 columns (bit 3)
+	lda #%00011000
+	sta $d016
+	// bitmap mode (bit 5), screen on (bit 4), 25 rows (bit 3)
+	lda #%00111000
+	sta $d011
+//Bits #0-#1: VIC bank. Values:
+//
+//    %00, 0: Bank #3, $C000-$FFFF, 49152-65535.
+//
+//    %01, 1: Bank #2, $8000-$BFFF, 32768-49151.
+//
+//    %10, 2: Bank #1, $4000-$7FFF, 16384-32767.
+//
+//    %11, 3: Bank #0, $0000-$3FFF, 0-16383.
+//
+
+	sei
+	lda #%00000010
+	sta $dd00
+	cli
+	rts
 
 spr_init:
 	// setup sprite at $0340 (== 13 * 64)
@@ -95,6 +137,7 @@ irq_bottom:
 	.if (debug) {
 	inc $d020
 	}
+	jsr flash
 	jsr scroll
 	jsr dance
 	jsr music.play
@@ -146,6 +189,154 @@ irq_top:
 	tax
 	pla
 	rti
+
+copy_buf_to_colram:
+	ldx #0
+!l:
+	lda buf    + 0 * 256, x
+	sta colram + 0 * 256, x
+	lda buf    + 1 * 256, x
+	sta colram + 1 * 256, x
+	lda buf    + 2 * 256, x
+	sta colram + 2 * 256, x
+	lda buf    + 3 * 256, x
+	sta colram + 3 * 256, x
+	dex
+	bne !l-
+	rts
+
+flash:
+	ldx #$00
+colrout:
+	lda colours,x	//load in our custom colours
+	sta $d020
+	sta $d021
+	ldy timing,x	//and corresponding timing.
+!loop:
+	dey
+	bpl !loop-
+	inx
+	cpx #$10      	//how many do we have? - 192
+	bne colrout     //keep going otherwise..
+
+	lda #$00        //clear
+	sta $d020
+	sta $d021
+	rts
+
+	ldx #$00
+!loop:
+	lda colours+$01,x     //store our colours
+	sta colours,x
+	inx
+	cpx #$c0
+	bne !loop-
+
+aa:
+	lda pattern+$df       // 8)
+	sta colours+$08
+ab:
+	lda pattern+$e0       //+1
+	sta colours+$10       //+8
+ac:
+	lda pattern+$e1       //+2
+	sta colours+$18       //+8
+ad:
+	lda pattern+$e2       //+3
+	sta colours+$20       //+8
+ae:
+	lda pattern+$e3       //etc
+	sta colours+$28
+af:
+	lda pattern+$e4
+	sta colours+$30
+ag:
+	lda pattern+$e5
+	sta colours+$38
+ah:
+	lda pattern+$e6
+	sta colours+$40
+ai:
+	lda pattern+$e7
+	sta colours+$48
+aj:
+	lda pattern+$e8
+	sta colours+$50
+ak:
+	lda pattern+$e9
+	sta colours+$58
+al:
+	lda pattern+$ea
+	sta colours+$60
+am:
+	lda pattern+$eb
+	sta colours+$68
+an:
+	lda pattern+$ec
+	sta colours+$70
+ao:
+	lda pattern+$ed
+	sta colours+$78
+ap:
+	lda pattern+$ee
+	sta colours+$80
+aq:
+	lda pattern+$ef
+	sta colours+$88
+ar:
+	lda pattern+$f0
+	sta colours+$90
+as:
+	lda pattern+$f1
+	sta colours+$98
+at:
+	lda pattern+$f2
+	sta colours+$a0
+au:
+	lda pattern+$f3
+	sta colours+$a8
+av:
+	lda pattern+$f4
+	sta colours+$b0
+ax:
+	lda pattern+$f5
+	sta colours+$b8
+ay:
+	lda pattern+$f6
+	sta colours+$c0
+az:
+	lda pattern+$18
+	sta colours+$c8
+	inc aa+$01 //increase count of each
+	inc ab+$01 //line
+	inc ac+$01
+	inc ad+$01
+	inc ae+$01
+	inc af+$01
+	inc ag+$01
+	inc ah+$01
+	inc ai+$01
+	inc aj+$01
+	inc ak+$01
+	inc al+$01
+	inc am+$01
+	inc an+$01
+	inc ao+$01
+	inc ap+$01
+	inc aq+$01
+	inc ar+$01
+	inc as+$01
+	inc at+$01
+	inc au+$01
+	inc av+$01
+	inc ax+$01
+	inc ay+$01
+	inc az+$01
+
+	lda #0
+	sta $d020
+	sta $d021
+	rts
 
 scroll:
 	// verplaats horizontaal
@@ -445,6 +636,105 @@ siny2:
 	.fill $100, round($90 + $40 * sin(toRadians(i * 360 / $100)))
 	.fill $100, round($90 + $40 * sin(toRadians(i * 360 / $100)))
 
-	* = $3000 "font data"
+.pc = colours "colours"
+.byte $0f,$01,$01,$0f,$0f,$0c,$0c,$0b
+.byte $0b,$01,$0f,$0f,$0c,$0c,$0b,$0b
+.byte $00,$0f,$0f,$0c,$0c,$0b,$0b,$00
+.byte $06,$0f,$0c,$0c,$0b,$0b,$00,$06
+.byte $06,$0c,$0c,$0b,$0b,$00,$06,$06
+.byte $0e,$0c,$0b,$0b,$00,$06,$06,$08
+.byte $0e,$0b,$0b,$00,$06,$06,$0e,$0e
+.byte $03,$0b,$00,$06,$06,$0e,$0e,$03
+.byte $03,$00,$06,$06,$0e,$0e,$03,$03
+.byte $01,$06,$06,$0e,$0e,$03,$03,$01
+.byte $01,$06,$0e,$0e,$03,$03,$01,$01
+.byte $0f,$0e,$0e,$03,$03,$01,$01,$0f
+.byte $0f,$0e,$03,$03,$01,$01,$0f,$0f
+.byte $0c,$03,$03,$01,$01,$0f,$0f,$0c
+.byte $0c,$03,$01,$01,$0f,$0f,$0c,$0c
+.byte $0b,$01,$01,$0f,$0f,$0c,$0c,$0b
+.byte $0b,$01,$0f,$0f,$0c,$0c,$0b,$0b
+.byte $00,$0f,$0f,$0c,$0c,$0b,$0b,$00
+.byte $0b,$0f,$0c,$0c,$0b,$0b,$00,$0b
+.byte $0b,$0c,$0c,$0b,$0b,$00,$0b,$0b
+.byte $05,$0c,$0b,$0b,$00,$0b,$0b,$05
+.byte $05,$0b,$0b,$00,$0b,$0b,$05,$05
+.byte $03,$0b,$00,$0b,$0b,$05,$05,$03
+.byte $03,$00,$0b,$0b,$05,$05,$03,$03
+.byte $0d,$00,$00,$00,$00,$00,$00,$0d //25
+.byte $01,$00
+
+.pc = timing "timing"
+.byte $00,07,$07,$07,$07,$07,$07,$07
+.byte $00,07,$07,$07,$07,$07,$07,$07
+.byte $00,07,$07,$07,$07,$07,$07,$07
+.byte $00,07,$07,$07,$07,$07,$07,$07
+.byte $00,07,$07,$07,$07,$07,$07,$07
+.byte $00,07,$07,$07,$07,$07,$07,$07
+.byte $00,07,$07,$07,$07,$07,$07,$07
+.byte $00,07,$07,$07,$07,$07,$07,$07
+.byte $00,07,$07,$07,$07,$07,$07,$07
+.byte $00,07,$07,$07,$07,$07,$07,$07
+.byte $00,07,$07,$07,$07,$07,$07,$07
+.byte $00,07,$07,$07,$07,$07,$07,$07
+.byte $00,07,$07,$07,$07,$07,$07,$07
+.byte $00,07,$07,$07,$07,$07,$07,$07
+.byte $00,07,$07,$07,$07,$07,$07,$07
+.byte $00,07,$07,$07,$07,$07,$07,$07
+.byte $00,07,$07,$07,$07,$07,$07,$07
+.byte $00,07,$07,$07,$07,$07,$07,$07
+.byte $00,07,$07,$07,$07,$07,$07,$07
+.byte $00,07,$07,$07,$07,$07,$07,$07
+.byte $00,07,$07,$07,$07,$07,$07,$07
+.byte $00,07,$07,$07,$07,$07,$07,$07
+.byte $00,07,$07,$07,$07,$07,$07,$07
+.byte $00,07,$07,$07,$07,$07,$07,$07
+.byte $00,07,$07,$07,$07,$07,$07,$07 //25
+.byte $00,07
+
+.pc = pattern "pattern"
+.byte $06,$06,$0e,$0e,$03,$03,$0d,$0d
+.byte $07,$07,$0f,$0f,$0a,$0a,$02,$02
+.byte $00,$0b,$0b,$0c,$0c,$0f,$0f,$01
+.byte $01,$0f,$0f,$0c,$0c,$0b,$0b,$00
+.byte $06,$06,$0e,$0e,$03,$03,$01,$01
+.byte $03,$03,$0e,$0e,$06,$06,$00,$06
+.byte $06,$0e,$0e,$03,$03,$0d,$0d,$07
+.byte $07,$0f,$0f,$0a,$0a,$02,$02,$00
+.byte $06,$06,$0e,$0e,$03,$03,$01,$01
+.byte $0f,$0f,$0c,$0c,$0b,$0b,$00,$0b
+.byte $0b,$05,$05,$03,$03,$0d,$0d,$07
+.byte $07,$03,$03,$05,$05,$0b,$0b,$00
+.byte $06,$06,$0e,$0e,$03,$03,$0d,$0d
+.byte $07,$07,$0f,$0f,$0a,$0a,$02,$02
+.byte $00,$0b,$0b,$0c,$0c,$0f,$0f,$01
+.byte $01,$0f,$0f,$0c,$0c,$0b,$0b,$00
+.byte $06,$06,$0e,$0e,$03,$03,$01,$01
+.byte $03,$03,$0e,$0e,$06,$06,$00,$06
+.byte $06,$0e,$0e,$03,$03,$0d,$0d,$07
+.byte $07,$0f,$0f,$0a,$0a,$02,$02,$00
+.byte $06,$06,$0e,$0e,$03,$03,$0d,$0d
+.byte $07,$07,$0f,$0f,$0a,$0a,$02,$02
+.byte $00,$0b,$0b,$0c,$0c,$0f,$0f,$01
+.byte $01,$0f,$0f,$0c,$0c,$0b,$0b,$00
+.byte $06,$06,$0e,$0e,$03,$03,$0d,$0d
+.byte $07,$07,$0f,$0f,$0a,$0a,$02,$02
+.byte $00,$0b,$0b,$0c,$0c,$0f,$0f,$01
+.byte $01,$0f,$0f,$0c,$0c,$0b,$0b,$00
+.byte $06,$06,$0e,$0e,$03,$03,$01,$01
+.byte $0f,$0f,$0c,$0c,$0b,$0b,$00,$0b
+.byte $0b,$05,$05,$03,$03,$0d,$0d,$07
+.byte $07,$03,$03,$05,$05,$0b,$0b,$00
+
+	* = font "font"
 
 	.import binary "aeg_collection_05.64c", 2
+
+	* = bitmap "bitmap"
+	.import binary "revbkg.koa", 2, 8000
+
+	* = screen "screen"
+	.import binary "revbkg.koa", 2 + 8000, 40 * 25
+
+	* = buf "buf"
+	.import binary "revbkg.koa", 2 + 8000 + 40 * 25, 40 * 25
