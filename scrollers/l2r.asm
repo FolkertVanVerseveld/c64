@@ -1,14 +1,17 @@
 // Assembler: KickAssembler 4.4
-// right to left scroller
-// horizontale scroller in één richting met instelbare snelheid
-// alleen voor tekst mode met één regel
+// left to right scroller
 
 BasicUpstart2(start)
 
 .var scr_clear_char = ' '
 .var scr_clear_color = $0f
 
+.var scroll_screen = $400
+
+.var debug = true
+
 	* = $810 "start"
+
 start:
 	jsr scr_clear
 	lda #$00
@@ -21,11 +24,13 @@ start:
 
 irq:
 	asl $d019
-	// BEGIN kernel
+	.if (debug) {
 	inc $d020
+	}
 	jsr scroll
+	.if (debug) {
 	dec $d020
-	// EIND kernel
+	}
 	pla
 	tay
 	pla
@@ -35,26 +40,28 @@ irq:
 
 #import "screen.asm"
 
-.var scroll_screen = $0400
-
 scroll:
-	// verplaats horizontaal
 	lda scroll_xpos
-	sec
-	sbc scroll_speed
+	clc
+	adc scroll_speed
+	cmp #$08
+	bpl !l+
+	sta scroll_xpos
+	jmp !done+
+!l:
 	and #$07
 	sta scroll_xpos
-	bcc !move+
-	jmp !klaar+
 !move:
-	// verplaats alles één naar links
-	ldx #$00
+	.if (false) {
+	inc $d021
+	}
+	// verplaats alles één naar rechts
+	ldx #38
 !l:
-	lda scroll_screen + 1, x
-	sta scroll_screen, x
-	inx
-	cpx #40
-	bne !l-
+	lda scroll_screen, x
+	sta scroll_screen + 1, x
+	dex
+	bpl !l-
 
 	// haal eentje op uit de rij
 !textptr:
@@ -63,12 +70,14 @@ scroll:
 	bne !nowrap+
 	jsr scroll_herstel
 !nowrap:
-	sta scroll_screen + 39
+	sta scroll_screen
 	// werk text ptr bij
-	inc !textptr- + 1
-	bne !klaar+
-	inc !textptr- + 2
-!klaar:
+	lda !textptr- + 1
+	bne !l+
+	dec !textptr- + 2
+!l:
+	dec !textptr- + 1
+!done:
 	// pas horizontale verplaatsing toe
 	lda #$c0
 	ora scroll_xpos
@@ -87,8 +96,10 @@ scroll_herstel:
 scroll_xpos:
 	.byte 0
 scroll_speed:
-	.byte 2
-scroll_text:
-	.text "hey, deze scroller kan alleen van rechts naar links bewegen. "
-	.text "hij gaat door tot 0xff en dan weer rond. "
+	.byte 3
 	.byte $ff
+	.text " maar er is maar 1 manier om daar achter te komen... "
+	.text " als het goed is kan hij ook teksten langer dan 256 karakters afhandelen."
+	.text " hey, deze scroller gaat de verkeerde kant op!"
+
+.label scroll_text = * - 1

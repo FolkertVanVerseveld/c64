@@ -148,8 +148,6 @@ scroll_herstel:
 
 scroll_xpos:
 	.byte 0
-scroll_char:
-	.byte 0
 scroll_text:
 	.text "deze scroller kan met een wisselende snelheid bewegen. "
 	.text "hij houdt twee lijsten bij voor de snelheid en duur van elke verandering. "
