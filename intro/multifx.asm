@@ -5,9 +5,9 @@
 
 BasicUpstart2(start)
 
-.var irq_line_top = $30
+.var irq_line_top = $28
 .var irq_line_top2 = $3a
-.var irq_line_bottom = $e8
+.var irq_line_bottom = $fc
 //.var spr_data = $2800
 
 .var music = LoadSid("Spijkerhoek.sid")
@@ -28,7 +28,7 @@ BasicUpstart2(start)
 .var top_textptr = screen
 .var top_colptr = $d800
 
-.var debug = true
+.var debug = false
 
 	* = $0810 "multifx"
 
@@ -137,10 +137,29 @@ spr_init:
 
 irq_bottom:
 	asl $d019
+	nop
+	nop
+	nop
+	nop
+	ldx #0
+!l:
+	lda !tbl+, x
+	sta $d020
+	jsr !d+
+	jsr !d+
+	jsr !d+
+	jsr !d+
+	nop
+	inx
+	cpx #6
+	bne !l-
+
+	lda #0
+	sta $d020
+
 	.if (debug) {
 	inc $d020
 	}
-	jsr flash
 	jsr scroll
 	jsr dance
 	jsr music.play
@@ -163,8 +182,31 @@ irq_bottom:
 	pla
 	rti
 
+!tbl:
+	.byte 1, 3, 1, 3, 14, 3, 14, 6
+
 irq_top:
 	asl $d019
+
+	nop
+	nop
+	nop
+	nop
+	ldx #0
+!l:
+	lda !tbl+, x
+	sta $d020
+	jsr !d+
+	jsr !d+
+	jsr !d+
+	jsr !d+
+	nop
+	inx
+	cpx #6
+	bne !l-
+
+	lda #0
+	sta $d020
 
 	.if (debug) {
 	inc $d020
@@ -201,6 +243,11 @@ irq_top:
 	tax
 	pla
 	rti
+!d:
+	rts
+
+!tbl:
+	.byte 6, 14, 3, 14, 3, 1, 3, 1
 
 irq_top2:
 	asl $d019
@@ -652,8 +699,9 @@ scroll_char:
 	.byte 0
 scroll_text:
 	.text "hello under construction 2017! this is methos' little compofiller. "
+	.text "this is completely coded at the party. "
 	.text "as always, my hardest problem on the c64 is to get started at all! "
-	.text "i'm still trying to wrap my head around irqs, sprites and lots of other stuff, so this is the best i can do for now... "
+	.text "this demo would not be possible without the help of fieserwolf "
 	.text "code by methos, music by evs. "
 
 	.text "greetings fly out to abyss connection, censor design, duncan, fairlight, fred, genesis project, miri-kat, monoceros, prosonix, scs-trc, stephan and all other groups and sceners! "
