@@ -6,11 +6,9 @@
 BasicUpstart2(start)
 
 .var irq_line_top = $30
+.var irq_line_top2 = $3a
 .var irq_line_bottom = $e8
 //.var spr_data = $2800
-
-.var top_textptr = $0400
-.var top_colptr = $d800
 
 .var music = LoadSid("Spijkerhoek.sid")
 
@@ -27,19 +25,22 @@ BasicUpstart2(start)
 .var spr_data = vic + $2400
 .var font = vic + $3000
 
+.var top_textptr = screen
+.var top_colptr = $d800
+
 .var debug = true
 
 	* = $0810 "multifx"
 
 start:
+	jsr copy_buf_to_colram
 	jsr scrclr
 	jsr scr_init
 	jsr top_init
 	jsr spr_init
-	jsr copy_buf_to_colram
 	lda #music.startSong - 1
 	jsr music.init
-	//jsr irq_init
+	jsr irq_init
 
 	// it's showtime!
 	lda #0
@@ -53,6 +54,8 @@ top_init:
 !l:
 	lda !tbl+, x
 	sta top_colptr, x
+	lda #' '
+	sta screen, x
 	inx
 	cpx #40
 	bne !l-
@@ -74,7 +77,7 @@ scr_init:
 	lda #%00011000
 	sta $d016
 	// bitmap mode (bit 5), screen on (bit 4), 25 rows (bit 3)
-	lda #%00111000
+	lda #%00111011
 	sta $d011
 //Bits #0-#1: VIC bank. Values:
 //
@@ -95,16 +98,16 @@ scr_init:
 
 spr_init:
 	// setup sprite at $0340 (== 13 * 64)
-	lda #(spr_data + 64 * 0) / 64
-	sta $07f8
-	lda #(spr_data + 64 * 1) / 64
-	sta $07f9
-	lda #(spr_data + 64 * 2) / 64
-	sta $07fa
-	lda #(spr_data + 64 * 3) / 64
-	sta $07fb
-	lda #(spr_data + 64 * 3) / 64
-	sta $07fc
+	lda #(spr_data - vic + 64 * 0) / 64
+	sta screen + $03f8
+	lda #(spr_data - vic + 64 * 1) / 64
+	sta screen + $03f9
+	lda #(spr_data - vic + 64 * 2) / 64
+	sta screen + $03fa
+	lda #(spr_data - vic + 64 * 3) / 64
+	sta screen + $03fb
+	lda #(spr_data - vic + 64 * 3) / 64
+	sta screen + $03fc
 	// copy sprites
 	ldx #0
 !l:
@@ -167,9 +170,54 @@ irq_top:
 	inc $d020
 	}
 
+	// apply horizontal position
+	lda #%11000000
+	ora scroll_xpos
+	sta $d016
+
+	// text mode (bit5 = 0), screen on (bit4 = 1), 25 rows (bit3 = 1)
+	lda #%00011011
+	sta $d011
+
 	// screen at $400, font bitmap at $3000
-	lda #%00011100
+	lda #%10001100
 	sta $d018
+
+	lda #<irq_top2
+	sta $0314
+	lda #>irq_top2
+	sta $0315
+
+	lda #irq_line_top2
+	sta $d012
+
+	.if (debug) {
+	dec $d020
+	}
+
+	pla
+	tay
+	pla
+	tax
+	pla
+	rti
+
+irq_top2:
+	asl $d019
+
+	.if (debug) {
+	inc $d020
+	}
+
+	//screen (colors12) at $2000    bitmap at $0000
+	lda #%10000000
+	sta $d018
+	// multicolor (bit 4), 40 columns (bit 3)
+	lda #%00011000
+	sta $d016
+	// bitmap mode (bit 5), screen on (bit 4), 25 rows (bit 3)
+	lda #%00111011
+	sta $d011
 
 	lda #<irq_bottom
 	sta $0314
@@ -182,6 +230,7 @@ irq_top:
 	.if (debug) {
 	dec $d020
 	}
+
 
 	pla
 	tay
@@ -370,10 +419,6 @@ scroll:
 	bne !done+
 	inc !textptr- + 2
 !done:
-	// pas horizontale verplaatsing toe
-	lda #$c0
-	ora scroll_xpos
-	sta $d016
 	rts
 
 top_restore:
@@ -477,7 +522,8 @@ irq_init:
 	// scherm aan (bit-4 aan)
 	// 25 rijen (bit-3 aan)
 	// y scroll = 3 (bits 0-2)
-	lda #$1b
+	lda $d011
+	and #%01111111
 	sta $d011
 
 	// de onderste 8-bits van de interruptregel.
