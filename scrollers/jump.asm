@@ -17,7 +17,10 @@
 .var jump_start = screen + jump_start_row * 40 + jump_start_col
 .var jump_start_colram = colram + jump_start_row * 40 + jump_start_col
 
-.var debug = true
+.var vic = $0
+.var font = vic + $2000
+
+.var debug = false
 
 BasicUpstart2(start)
 
@@ -43,6 +46,11 @@ text_init:
 	inx
 	cpx #19
 	bne !l-
+
+	// screen at $400, font bitmap at $2000
+	lda #%00011000
+	sta $d018
+
 	rts
 
 irq:
@@ -74,7 +82,7 @@ jump:
 	lda #%00011000
 	ora jump_ypos
 	sta $d011
-	//inc jump_vspeed
+	inc jump_vspeed
 	rts
 !l:
 	jsr move_down
@@ -93,7 +101,7 @@ jump_up:
 	lda #%00011000
 	ora jump_ypos
 	sta $d011
-	//dec jump_vspeed
+	dec jump_vspeed
 	rts
 !l:
 	jsr move_up
@@ -118,13 +126,9 @@ move_down:
 	lda #jump_rows
 	cmp jump_row
 	bne !l+
-	// TODO reverse direction
-	// reset text for now
-	//jsr text_init
+	// reverse direction
 	lda #0
 	sta jump_row
-	//lda #$f9
-	//sta jump_vspeed
 	lda #<jump_up
 	sta jump_ptr + 1
 	lda #>jump_up
@@ -135,10 +139,6 @@ move_down:
 	rts
 
 move_up:
-	//lda #0
-	//sta jump_row
-	//jmp !rev+
-
 	dec jump_row
 	bne !l+
 	jmp !rev+
@@ -163,8 +163,6 @@ move_up:
 	lda #1
 	sta jump_vspeed
 	// revert pointer
-	inc $d020
-	//jsr text_init
 	lda #<jump
 	sta jump_ptr + 1
 	lda #>jump
@@ -203,3 +201,7 @@ irq_init:
 jump_text:
 	.text "deze tekst springt!"
 	.byte $ff
+
+	* = font "font"
+
+	.import binary "chars_02.64c", 2
