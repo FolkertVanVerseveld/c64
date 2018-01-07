@@ -10,7 +10,7 @@ BasicUpstart2(start)
 .var irq_line_bottom = $fc
 //.var spr_data = $2800
 
-.var music = LoadSid("Final_Axel.sid")
+.var music = LoadSid("Spijkerhoek.sid")
 
 //set variables and locations
 .var buf = $2700
@@ -103,10 +103,8 @@ spr_init:
 	sta screen + $03fa
 	lda #(spr_data - vic + 64 * 3) / 64
 	sta screen + $03fb
-	lda #(spr_data - vic + 64 * 4) / 64
+	lda #(spr_data - vic + 64 * 3) / 64
 	sta screen + $03fc
-	lda #(spr_data - vic + 64 * 4) / 64
-	sta screen + $03fd
 	// copy sprites
 	ldx #0
 !l:
@@ -118,25 +116,22 @@ spr_init:
 	sta spr_data + 64 * 2, x
 	lda m3spr, x
 	sta spr_data + 64 * 3, x
-	lda m4spr, x
-	sta spr_data + 64 * 4, x
-	lda m4spr, x
-	sta spr_data + 64 * 5, x
 	// sprite 4 is identical to sprite 3
 	inx
 	cpx #64
 	bne !l-
 	// show sprites
-	lda #$3f
+	lda #$1f
 	sta $d015
-	lda #6
-	sta $d027
-	sta $d028
-	sta $d029
-	sta $d02a
 	lda #1
+	sta $d027
+	lda #14
+	sta $d028
+	lda #15
+	sta $d029
+	lda #1
+	sta $d02a
 	sta $d02b
-	sta $d02c
 	rts
 
 irq_bottom:
@@ -376,19 +371,24 @@ dance:
 	inx
 	inx
 	stx m2p
+	// side sprites
 	ldx m3p
-	lda sinx + $18, x
+	lda #40
 	sta $d006
-	lda siny + $48, x
+	lda siny2 + $40, x
 	sta $d007
 	inx
 	inx
+	inx
+	inx
+	inx
 	stx m3p
-	// side sprites
 	ldx m4p
-	lda #40
+	lda #$10
+	sta $d010
+	lda #44
 	sta $d008
-	lda siny2 + $40, x
+	lda siny2 + $40 + $80, x
 	sta $d009
 	inx
 	inx
@@ -396,19 +396,6 @@ dance:
 	inx
 	inx
 	stx m4p
-	ldx m5p
-	lda #$10
-	sta $d010
-	lda #44
-	sta $d00a
-	lda siny2 + $40 + $80, x
-	sta $d00b
-	inx
-	inx
-	inx
-	inx
-	inx
-	stx m5p
 	rts
 
 scrclr:
@@ -472,107 +459,81 @@ m3p:
 	.byte 0
 m4p:
 	.byte 0
-m5p:
-	.byte 0
 
 .align $100
 m0spr:
-	.byte %00000011, %11111111, %11100000
-	.byte %00000111, %11111111, %11110000
-	.byte %00001111, %11111111, %11110000
-	.byte %00011111, %11111111, %11110000
-	.byte %00011111, %11111111, %11110000
-	.byte %00011111, %11111111, %11100000
-	.byte %00011111, %10000000, %00000000
-	.byte %00011111, %10000000, %00000000
-	.byte %00011111, %11111111, %10000000
-	.byte %00011111, %11111111, %11000000
-	.byte %00001111, %11111111, %11100000
-	.byte %00000111, %11111111, %11110000
-	.byte %00000011, %11111111, %11110000
-	.byte %00000000, %00000011, %11110000
-	.byte %00000000, %00000011, %11110000
-	.byte %00001111, %11111111, %11110000
-	.byte %00011111, %11111111, %11110000
-	.byte %00011111, %11111111, %11110000
-	.byte %00011111, %11111111, %11100000
-	.byte %00011111, %11111111, %11000000
-	.byte %00001111, %11111111, %10000000
-	.byte 0
+	.byte %11111100, %00000000, %00111111
+	.byte %11111100, %00000000, %00111111
+	.byte %01111110, %00000000, %01111110
+	.byte %01111110, %00000000, %01111110
+	.byte %00111111, %00000000, %11111100
+	.byte %00111111, %00000000, %11111100
+	.byte %00011111, %10000001, %11111000
+	.byte %00011111, %10000001, %11111000
+	.byte %00001111, %11000011, %11110000
+	.byte %00001111, %11000011, %11110000
+	.byte %00000111, %11100111, %11100000
+	.byte %00000111, %11111111, %11100000
+	.byte %00000011, %11111111, %11000000
+	.byte %00000011, %11111111, %11000000
+	.byte %00000001, %11111111, %10000000
+	.byte %00000001, %11111111, %10000000
+	.byte %00000000, %11111111, %00000000
+	.byte %00000000, %11111111, %00000000
+	.byte %00000000, %01111110, %00000000
+	.byte %00000000, %01111110, %00000000
+	.byte %00000000, %00111100, %00000000
+ 	.byte 0
 
 m1spr:
-	.byte %00111111, %00000000, %11111100
-	.byte %00111111, %00000000, %11111100
-	.byte %00111111, %00000000, %11111100
-	.byte %00111111, %00000000, %11111100
-	.byte %00111111, %00000000, %11111100
-	.byte %00111111, %00000000, %11111100
-	.byte %00111111, %00000000, %11111100
-	.byte %00111111, %11111111, %11111100
-	.byte %00111111, %11111111, %11111100
-	.byte %00111111, %11111111, %11111100
-	.byte %00111111, %11111111, %11111100
-	.byte %00111111, %11111111, %11111100
-	.byte %00111111, %11111111, %11111100
-	.byte %00111111, %00000000, %11111100
-	.byte %00111111, %00000000, %11111100
-	.byte %00111111, %00000000, %11111100
-	.byte %00111111, %00000000, %11111100
-	.byte %00111111, %00000000, %11111100
-	.byte %00111111, %00000000, %11111100
-	.byte %00111111, %00000000, %11111100
-	.byte %00111111, %00000000, %11111100
-	.byte 0
+	.byte %00000001, %11111111, %10000000
+	.byte %00000001, %11111111, %10000000
+	.byte %00000000, %11111111, %00000000
+	.byte %00000000, %01111110, %00000000
+	.byte %00000000, %01111110, %00000000
+	.byte %00000000, %01111110, %00000000
+	.byte %00000000, %01111110, %00000000
+	.byte %00000000, %01111110, %00000000
+	.byte %00000000, %01111110, %00000000
+	.byte %00000000, %01111110, %00000000
+	.byte %00000000, %01111110, %00000000
+	.byte %00000000, %01111110, %00000000
+	.byte %00000000, %01111110, %00000000
+	.byte %00000000, %01111110, %00000000
+	.byte %00000000, %01111110, %00000000
+	.byte %00000000, %01111110, %00000000
+	.byte %00000000, %01111110, %00000000
+	.byte %00000000, %01111110, %00000000
+	.byte %00000000, %11111111, %00000000
+	.byte %00000001, %11111111, %10000000
+	.byte %00000001, %11111111, %10000000
+ 	.byte 0
 
 m2spr:
-	.byte %00000001, %11111111, %10000000
-	.byte %00000001, %11111111, %10000000
-	.byte %00000000, %11111111, %00000000
-	.byte %00000000, %01111110, %00000000
-	.byte %00000000, %01111110, %00000000
-	.byte %00000000, %01111110, %00000000
-	.byte %00000000, %01111110, %00000000
-	.byte %00000000, %01111110, %00000000
-	.byte %00000000, %01111110, %00000000
-	.byte %00000000, %01111110, %00000000
-	.byte %00000000, %01111110, %00000000
-	.byte %00000000, %01111110, %00000000
-	.byte %00000000, %01111110, %00000000
-	.byte %00000000, %01111110, %00000000
-	.byte %00000000, %01111110, %00000000
-	.byte %00000000, %01111110, %00000000
-	.byte %00000000, %01111110, %00000000
-	.byte %00000000, %01111110, %00000000
 	.byte %00000000, %11111111, %00000000
 	.byte %00000001, %11111111, %10000000
-	.byte %00000001, %11111111, %10000000
-	.byte 0
+	.byte %00000011, %11111111, %11000000
+	.byte %00000111, %11111111, %11100000
+	.byte %00000111, %11111111, %11100000
+	.byte %00001111, %10000001, %11110000
+	.byte %00001111, %10000001, %11110000
+	.byte %00001111, %00000000, %11110000
+	.byte %00011111, %00000000, %11111000
+	.byte %00011111, %11111111, %11111000
+	.byte %00011111, %11111111, %11111000
+	.byte %00011111, %11111111, %11111000
+	.byte %00011111, %11111111, %11111000
+	.byte %00011111, %11111111, %11111000
+	.byte %00011111, %00000000, %11111000
+	.byte %00011111, %00000000, %11111000
+	.byte %00011111, %00000000, %11111000
+	.byte %00011111, %00000000, %11111000
+	.byte %00011111, %00000000, %11111000
+	.byte %00011111, %00000000, %11111000
+	.byte %00011111, %00000000, %11111000
+ 	.byte 0
 
 m3spr:
-	.byte %00001111, %11111111, %10000000
-	.byte %00001111, %11111111, %11000000
-	.byte %00001111, %11111111, %11100000
-	.byte %00001111, %11111111, %11110000
-	.byte %00001111, %11111111, %11110000
-	.byte %00001111, %11100011, %11110000
-	.byte %00001111, %11000001, %11110000
-	.byte %00001111, %11000001, %11110000
-	.byte %00001111, %11100011, %11110000
-	.byte %00001111, %11111111, %11110000
-	.byte %00001111, %11111111, %11110000
-	.byte %00001111, %11111111, %11100000
-	.byte %00001111, %11111111, %11000000
-	.byte %00001111, %11111111, %10000000
-	.byte %00001111, %11000000, %00000000
-	.byte %00001111, %11000000, %00000000
-	.byte %00001111, %11000000, %00000000
-	.byte %00001111, %11000000, %00000000
-	.byte %00001111, %11000000, %00000000
-	.byte %00001111, %11000000, %00000000
-	.byte %00001111, %11000000, %00000000
-	.byte 0
-
-m4spr:
 	.byte %00000001, %11111100, %00000000
 	.byte %00000111, %11111111, %00000000
 	.byte %00001111, %11111111, %10000000
@@ -603,10 +564,19 @@ scroll_speed:
 scroll_char:
 	.byte 0
 scroll_text:
-	.text "whoah! mah boi! this is me, teh king! i'm going to the cinema to see funny dinnur for! "
-	.text "whoahahahahahah! "
-	.text "this piece is what all true warriors strive for! "
-	.text "i will take the triforce of courage to protect me ....... ... .. .             "
+	.text "welkom bij de workshop van de commodore 64 georganiseerd door via! "
+	.text "met vice gaan we wat programma's bekijken en maken. "
+	.text "een paar weken terug was ik bij under construction 17 in gernsheim waar ik deze demo heb gemaakt. "
+	.text "alles is geschreven in assembly - ongeveer 600 regels! - met kick assembler v4.4 en "
+	.text "ik heb er ongeveer 2 dagen dag en nacht aan gewerkt. "
+	.text "demo's coden op een c64 duurt een eeuwigheid, maar dan heb je ook wat! "
+	.text "groetjes aan fieserwolf van abyss connection, censor design, duncan, fairlight, fred, genesis project, miri-kat, monoceros, prosonix, scs-trc, stephan en alle andere groepen en sceners! "
+	.text "de scroller is het makkelijkst om te maken, maar de raster interrupts goed laten werken is veel lastiger! "
+	.text "in de workshop gaan we niet naar assembly kijken, hoewel ik het graag wilde doen. "
+	.text "het kost gewoon teveel tijd om uit te leggen... "
+	.text "daarnaast moest ik sowieso veel inhoud weglaten om te zorgen dat alles in anderhalfuur past! "
+	.text "ik moet nu stoppen, want het past niet meer! "
+	.text ".......  ...  .. .     "
 	.byte $ff
 
 	* = music.location "music"
@@ -636,10 +606,10 @@ siny2:
 	.import binary "aeg_collection_05.64c", 2
 
 	* = bitmap "bitmap"
-	.import binary "king_harkinian.koa", 2, 8000
+	.import binary "bestuur.koa", 2, 8000
 
 	* = screen "screen"
-	.import binary "king_harkinian.koa", 2 + 8000, 40 * 25
+	.import binary "bestuur.koa", 2 + 8000, 40 * 25
 
 	* = buf "buf"
-	.import binary "king_harkinian.koa", 2 + 8000 + 40 * 25, 40 * 25
+	.import binary "bestuur.koa", 2 + 8000 + 40 * 25, 40 * 25
