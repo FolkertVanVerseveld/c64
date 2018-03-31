@@ -101,15 +101,25 @@ irq:
 irq2:
 	lda #$0
 	sta $d020
+	lda #$2
 	sta $d021
 	nop
 	nop
 	nop
+	nop
+	nop
+	nop
+	bit $fe
 	// restore bitmap mode
-	lda #$3b
-	sta $d011
+	ldx #$3b
 	lda #$d8
 	sta $d016
+	stx $d011
+	// 0011 1000
+	// screen at 3: $0c00-$0fff
+	// bitmap at 4: $2000-$3fff
+	lda #$38
+	sta $d018
 	// restore first interrupt
 	lda #<irq
 	sta $0314
@@ -117,11 +127,6 @@ irq2:
 	sta $0315
 	lda #line_scroll
 	sta $d012
-	lda #$38
-	// 0011 1000
-	// screen at 3: $0c00-$0fff
-	// bitmap at 4: $2000-$3fff
-	sta $d018
 	// acknowledge interrupt
 	asl $d019
 	// debugging purposes
@@ -343,15 +348,21 @@ methos_colram:
 	.fill methos.getBitmapSize(), methos.getBitmap(i)
 
 text:
-	.text " scheisse, ich wollte doch nur die uhrzeit umstellen! "
+	.text " sup! you are looking at my first scroller demo written in february 2017. "
 	.text "code and graphics by methos, "
-	.text "music by maciej licbarksi (mhd) "
-	.text "hey daar! methos here, this is a very simple scroller "
-	.text "using two raster interrupts to switch video modes. "
-	.text "the more i look at this demo the more i want to master this awesome machine. "
-	.text "last year when i first attended a demoscene party (x16 of course!) i would never think i liked being part of the scene this much! "
-	.text "a big shout out to fieser wolf, who helped me party coding a little demo. "
+	.text "music by maciej licbarksi (mhd). "
+	.text "a big shout out to fieser wolf, who helped me party coding a little demo at x16. "
 	.text "greetings also fly out to wilfred bos and duncan for helping me out. "
-	.text "and greetings to david vanhove (laten we maar een mooie demo maken!) "
-	.text "text loops now   - "
+	.text "this disk contains three programs. the first one has been recycled from an unreleased demo at under construction 2017 because i didn't finish in time. "
+	.text "i have been writing a couple of simple programs, but my hardest problem is to get started at all! "
+	.text "i am currently also very busy studying computer science at the university of amsterdam and some other side projects i want to keep doing... .. . . "
+	.text "but i finally made the decision to release something, because i can't keep lying that i have to mentally prepare myself to release a good demo. "
+	.text "all first demo's are crap, so is mine! "
+	.text "i have lots of ideas for new demo's, but i am often too eager to try and i fear that i mess up. "
+	.text "a couple of months ago i watched a very nice documentary made by some hungarian sceners called the art of algorithms from moleman i think, and at one moment some scener told the interviewers: "
+	.text "it's very naive to think that you don't want to release something just because you think you aren't good enough. "
+	.text "if you release something you've at least tried to make something good. "
+	.text "most people don't even try        "
+	.text "i think this is very motivational and if you are thinking the same i really recommend watching this documentary! "
+	.text "methos signing of because the deadline is near....... .. . . . "
 	.byte $ff

@@ -10,7 +10,7 @@ BasicUpstart2(start)
 .var irq_line_bottom = $fc
 //.var spr_data = $2800
 
-.var music = LoadSid("FAME_1.sid")
+.var music = LoadSid("Spijkerhoek.sid")
 
 //set variables and locations
 .var buf = $2700
@@ -45,13 +45,6 @@ start:
 	sta $d021
 
 	jmp *
-
-	* = music.location "music"
-
-	.fill music.size, music.getData(i)
-
-	.print "music_init = $" + toHexString(music.init)
-	.print "music_play = $" + toHexString(music.play)
 
 top_init:
 	ldx #0
@@ -130,13 +123,13 @@ spr_init:
 	// show sprites
 	lda #$1f
 	sta $d015
-	lda #1
+	lda #2
 	sta $d027
-	lda #14
-	sta $d028
-	lda #15
-	sta $d029
 	lda #1
+	sta $d028
+	lda #6
+	sta $d029
+	lda #6
 	sta $d02a
 	sta $d02b
 	rts
@@ -469,6 +462,54 @@ m4p:
 
 .align $100
 m0spr:
+	.byte %00000000, %00000000, %00000000
+	.byte %00111111, %11111110, %00000000
+	.byte %01111111, %11111111, %10000000
+	.byte %00111111, %11111111, %11000000
+	.byte %00001110, %00000001, %11100000
+	.byte %00001110, %00000000, %11100000
+	.byte %00001110, %00000000, %11100000
+	.byte %00001110, %00000000, %11100000
+	.byte %00001110, %00000000, %11100000
+	.byte %00001110, %00000011, %11100000
+	.byte %00001111, %11111111, %11100000
+	.byte %00001111, %11111111, %11000000
+	.byte %00001111, %11111111, %10000000
+	.byte %00001110, %00001111, %00000000
+	.byte %00001110, %00000111, %10000000
+	.byte %00001110, %00000011, %11000000
+	.byte %00001110, %00000001, %11100000
+	.byte %00111111, %11000000, %11111000
+	.byte %01111111, %11000000, %01111000
+	.byte %00111111, %11000000, %01111000
+	.byte %00000000, %00000000, %00000000
+ 	.byte 0
+
+m1spr:
+	.byte %00000000, %00000000, %00000000
+	.byte %00111111, %11111111, %11000000
+	.byte %01111111, %11111111, %11000000
+	.byte %00111111, %11111111, %11000000
+	.byte %00001110, %00000001, %11000000
+	.byte %00001110, %00000001, %11000000
+	.byte %00001110, %00000001, %11000000
+	.byte %00001110, %00000000, %11000000
+	.byte %00001110, %00001100, %00000000
+	.byte %00001110, %00011100, %00000000
+	.byte %00001111, %11111100, %00000000
+	.byte %00001111, %11111100, %00000000
+	.byte %00001110, %00011100, %00000000
+	.byte %00001110, %00001100, %01100000
+	.byte %00001110, %00000000, %11100000
+	.byte %00001110, %00000000, %11100000
+	.byte %00001110, %00000000, %11100000
+	.byte %00111111, %11111111, %11100000
+	.byte %01111111, %11111111, %11100000
+	.byte %00111111, %11111111, %11100000
+	.byte %00000000, %00000000, %00000000
+ 	.byte 0
+
+m2spr:
 	.byte %11111100, %00000000, %00111111
 	.byte %11111100, %00000000, %00111111
 	.byte %01111110, %00000000, %01111110
@@ -490,54 +531,6 @@ m0spr:
 	.byte %00000000, %01111110, %00000000
 	.byte %00000000, %01111110, %00000000
 	.byte %00000000, %00111100, %00000000
- 	.byte 0
-
-m1spr:
-	.byte %00000001, %11111111, %10000000
-	.byte %00000001, %11111111, %10000000
-	.byte %00000000, %11111111, %00000000
-	.byte %00000000, %01111110, %00000000
-	.byte %00000000, %01111110, %00000000
-	.byte %00000000, %01111110, %00000000
-	.byte %00000000, %01111110, %00000000
-	.byte %00000000, %01111110, %00000000
-	.byte %00000000, %01111110, %00000000
-	.byte %00000000, %01111110, %00000000
-	.byte %00000000, %01111110, %00000000
-	.byte %00000000, %01111110, %00000000
-	.byte %00000000, %01111110, %00000000
-	.byte %00000000, %01111110, %00000000
-	.byte %00000000, %01111110, %00000000
-	.byte %00000000, %01111110, %00000000
-	.byte %00000000, %01111110, %00000000
-	.byte %00000000, %01111110, %00000000
-	.byte %00000000, %11111111, %00000000
-	.byte %00000001, %11111111, %10000000
-	.byte %00000001, %11111111, %10000000
- 	.byte 0
-
-m2spr:
-	.byte %00000000, %11111111, %00000000
-	.byte %00000001, %11111111, %10000000
-	.byte %00000011, %11111111, %11000000
-	.byte %00000111, %11111111, %11100000
-	.byte %00000111, %11111111, %11100000
-	.byte %00001111, %10000001, %11110000
-	.byte %00001111, %10000001, %11110000
-	.byte %00001111, %00000000, %11110000
-	.byte %00011111, %00000000, %11111000
-	.byte %00011111, %11111111, %11111000
-	.byte %00011111, %11111111, %11111000
-	.byte %00011111, %11111111, %11111000
-	.byte %00011111, %11111111, %11111000
-	.byte %00011111, %11111111, %11111000
-	.byte %00011111, %00000000, %11111000
-	.byte %00011111, %00000000, %11111000
-	.byte %00011111, %00000000, %11111000
-	.byte %00011111, %00000000, %11111000
-	.byte %00011111, %00000000, %11111000
-	.byte %00011111, %00000000, %11111000
-	.byte %00011111, %00000000, %11111000
  	.byte 0
 
 m3spr:
@@ -571,20 +564,24 @@ scroll_speed:
 scroll_char:
 	.byte 0
 scroll_text:
-	.text "welkom bij de workshop van de commodore 64 georganiseerd door via! "
-	.text "met vice gaan we wat programma's bekijken en maken. "
-	.text "een paar weken terug was ik bij under construction 17 in gernsheim waar ik deze demo heb gemaakt. "
-	.text "alles is geschreven in assembly - ongeveer 600 regels! - met kick assembler v4.4 en "
-	.text "ik heb er ongeveer 2 dagen dag en nacht aan gewerkt. "
-	.text "demo's coden op een c64 duurt een eeuwigheid, maar dan heb je ook wat! "
-	.text "groetjes aan fieserwolf van abyss connection, censor design, duncan, fairlight, fred, genesis project, miri-kat, monoceros, prosonix, scs-trc, stephan en alle andere groepen en sceners! "
-	.text "de scroller is het makkelijkst om te maken, maar de raster interrupts goed laten werken is veel lastiger! "
-	.text "in de workshop gaan we niet naar assembly kijken, hoewel ik het graag wilde doen. "
-	.text "het kost gewoon teveel tijd om uit te leggen... "
-	.text "daarnaast moest ik sowieso veel inhoud weglaten om te zorgen dat alles in anderhalfuur past! "
-	.text "ik moet nu stoppen, want het past niet meer! "
-	.text ".......  ...  .. .     "
+	.text "hey daar! methos here, this is my very first demo release. "
+	.text "code by methos, music by ews, graphics by jvhertum. "
+	.text "in 2016, i attended my first demoscene party (x16 of course!) and i would never think i liked the demoscene this much! "
+	.text "sorry for this short low quality prod, but i have to start somewhere...... "
+	.text "greetings to abyss connection, admbot, algotech, booze design, byte rapers, censor design, delysid, gorgomel, hoaxers, mirikat, monoceors, odymeister, oxyron, snorro, stephan, triad, trsi, vinci, yps "
+	.text "and everyone i forgot. "
+	.text "i have been thinking about starting my own group, but i think it's better to join a group because i can learn faster that way and improve my coding skills. "
+	.text "if you want to start a group as well or are looking for new members, hit me up! "
+	.text "my email: folkert.van.verseveld at gmail.com, my phone number: 0031630479450 or you can write to me at: cornelis lelylaan 3e14 1062hd amsterdam, the netherlands    "
+	.text "methos signing out because out of space, text loops now .......... ... .. . .        "
 	.byte $ff
+
+	* = music.location "music"
+
+	.fill music.size, music.getData(i)
+
+	.print "music_init = $" + toHexString(music.init)
+	.print "music_play = $" + toHexString(music.play)
 
 	// sprite movement tables
 .align $100

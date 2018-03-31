@@ -343,15 +343,7 @@ methos_colram:
 	.fill methos.getBitmapSize(), methos.getBitmap(i)
 
 text:
-	.text " scheisse, ich wollte doch nur die uhrzeit umstellen! "
-	.text "code and graphics by methos, "
-	.text "music by maciej licbarksi (mhd) "
-	.text "hey daar! methos here, this is a very simple scroller "
-	.text "using two raster interrupts to switch video modes. "
-	.text "the more i look at this demo the more i want to master this awesome machine. "
-	.text "last year when i first attended a demoscene party (x16 of course!) i would never think i liked being part of the scene this much! "
-	.text "a big shout out to fieser wolf, who helped me party coding a little demo. "
-	.text "greetings also fly out to wilfred bos and duncan for helping me out. "
-	.text "and greetings to david vanhove (laten we maar een mooie demo maken!) "
+	.text " hey daar! methos here, this is my first demo and compofiller. "
+	.text "code by methos, music by mhd, loader by krill "
 	.text "text loops now   - "
 	.byte $ff
