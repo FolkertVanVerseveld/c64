@@ -1,3 +1,9 @@
+.var brkFile = createFile("breakpoints.txt")
+.macro break() {
+.eval brkFile.writeln("break " + toHexString(*))
+}
+
+BasicUpstart2(start)
 
 .const screen = $0400
 .const colram = $d800
@@ -7,6 +13,7 @@
 .const dot_array_count = 6
 .const crack_count = 12
 
+start:
 // breakout effect
 
 /*******************************************/
