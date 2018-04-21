@@ -562,6 +562,7 @@ scroll_speed:
 scroll_char:
 	.byte 0
 scroll_text:
+	//.text "hallo daar! test 1 2 3 dit is een test.... lekker klooien bij de hcc... "
 	.text "hello under construction 2017! this is methos' little compofiller. "
 	.text "this is completely coded at the party. "
 	.text "as always, my hardest problem on the c64 is to get started at all! "
