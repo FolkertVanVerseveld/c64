@@ -1,0 +1,14 @@
+// screen pointer direction table
+// resets when item is 0
+tbl_dir:
+    .byte 41, -39, -41, 39, -41, -40, 0
+
+
+// each entry determines when screen pointer changes direction
+tbl_line:
+    .word screen + 24 * 40 + 24
+    .word screen + 24 * 40 + 24 - 15 * 40 + 15
+    .word screen + 399 - 9 - 9 * 40
+    .word screen + 30 + 24 * 40 - 24
+    .word screen + 966 - 6 - 6 * 40
+    .word screen
