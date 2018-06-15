@@ -9,9 +9,19 @@ BasicUpstart2(start)
 	* = $0810 "start"
 
 .var scherm = $0400
-.var links = scherm + 4 * 40 + 6
+.var wis_links = scherm + 4 * 40
+.var links = wis_links + 6
+.var wis_rechts = scherm + 7 * 40
+.var rechts = wis_rechts + 39 - 6
 
-.var rechts = scherm + 7 * 40 + 39 - 6
+
+.var num1lo = $62
+.var num1hi = $63
+.var num2lo = $64
+.var num2hi = $65
+.var reslo = $66
+.var reshi = $67
+.var delta = $68
 
 start:
 	jsr scr_clear
@@ -20,6 +30,18 @@ start:
 	sta $d021
 	jsr irq_init
 	jmp *
+
+// add 8-bit constant to 16-bit number
+
+add8_16:
+	clc
+	lda num1lo
+	adc #2     // the constant
+	sta num1lo
+	bcc !ok+
+	inc num1hi
+!ok:
+	rts
 
 #import "../irq/krnl1.asm"
 
@@ -46,7 +68,7 @@ scroll:
 
 scroll_links:
 rol_ptr_links:
-	lda regel1
+	lda regel1_links
 	beq !done+
 text_ptr_links:
 	sta links
@@ -61,50 +83,172 @@ text_ptr_links:
 	inc text_ptr_links + 2
 !skip:
 	rts
+	// reset rechts logic
 !done:
-	// TODO reset rechts logic
 	inc scroll + 1
+tabel_ptr_rechts_lo:
+	lda regel_tabel_rechts
+	sta rol_ptr_rechts + 1
+tabel_ptr_rechts_hi:
+	lda regel_tabel_rechts + 1
+	sta rol_ptr_rechts + 2
+	lda #<rechts
+	sta text_ptr_rechts + 1
+	lda #>rechts
+	sta text_ptr_rechts + 2
+	// verplaats tabel ptr
+	lda tabel_ptr_rechts_lo + 1
+	sta num1lo
+	lda tabel_ptr_rechts_lo + 2
+	sta num1hi
+	jsr add8_16
+	lda num1lo
+	sta tabel_ptr_rechts_lo + 1
+	lda num1hi
+	sta tabel_ptr_rechts_lo + 2
+	lda tabel_ptr_rechts_hi + 1
+	sta num1lo
+	lda tabel_ptr_rechts_hi + 2
+	sta num1hi
+	jsr add8_16
+	lda num1lo
+	sta tabel_ptr_rechts_hi + 1
+	lda num1hi
+	sta tabel_ptr_rechts_hi + 2
+	// reset als eind
+	lda tabel_ptr_rechts_lo + 1
+	cmp #<regel_tabel_rechts_eind
+	bne !skip+
+	lda tabel_ptr_rechts_lo + 2
+	cmp #>regel_tabel_rechts_eind
+	bne !skip+
+	// reset ptr
+	lda #<regel_tabel_rechts
+	sta tabel_ptr_rechts_lo + 1
+	lda #>regel_tabel_rechts
+	sta tabel_ptr_rechts_lo + 2
+	lda #<regel_tabel_rechts + 1
+	sta tabel_ptr_rechts_hi + 1
+	lda #>regel_tabel_rechts + 1
+	sta tabel_ptr_rechts_hi + 2
+!skip:
 	rts
 
 scroll_rechts:
 rol_ptr_rechts:
-	lda regel3 - 2
+	lda regel2_rechts
 	beq !done+
 text_ptr_rechts:
 	sta rechts
 	// verplaats rol_ptr
 	dec rol_ptr_rechts + 1
+	lda rol_ptr_rechts + 1
+	cmp #$ff
 	bne !skip+
 	dec rol_ptr_rechts + 2
 !skip:
 	// verplaats text_ptr
 	dec text_ptr_rechts + 1
+	lda text_ptr_rechts + 1
+	cmp #$ff
 	bne !skip+
 	dec text_ptr_rechts + 2
 !skip:
 	rts
+	// reset links logic
 !done:
+	// ik wil het eigenlijk anders doen,
+	// maar wis beide regels
+	lda #' '
+	ldx #0
+!l:
+	sta wis_links, x
+	sta wis_rechts, x
+	inx
+	cpx #40
+	bne !l-
 	inc $d020
 	dec scroll + 1
-	// TODO reset links logic
+tabel_ptr_links_lo:
+	lda regel_tabel_links
+	sta rol_ptr_links + 1
+tabel_ptr_links_hi:
+	lda regel_tabel_links + 1
+	sta rol_ptr_links + 2
+	lda #<links
+	sta text_ptr_links + 1
+	lda #>links
+	sta text_ptr_links + 2
+	// verplaats tabel ptr
+	lda tabel_ptr_links_lo + 1
+	sta num1lo
+	lda tabel_ptr_links_lo + 2
+	sta num1hi
+	jsr add8_16
+	lda num1lo
+	sta tabel_ptr_links_lo + 1
+	lda num1hi
+	sta tabel_ptr_links_lo + 2
+	lda tabel_ptr_links_hi + 1
+	sta num1lo
+	lda tabel_ptr_links_hi + 2
+	sta num1hi
+	jsr add8_16
+	lda num1lo
+	sta tabel_ptr_links_hi + 1
+	lda num1hi
+	sta tabel_ptr_links_hi + 2
+	// reset als eind
+	lda tabel_ptr_links_lo + 1
+	cmp #<regel_tabel_links_eind
+	bne !skip+
+	lda tabel_ptr_links_lo + 2
+	cmp #>regel_tabel_links_eind
+	bne !skip+
+	// reset ptr
+	lda #<regel_tabel_links
+	sta tabel_ptr_links_lo + 1
+	lda #>regel_tabel_links
+	sta tabel_ptr_links_lo + 2
+	lda #<regel_tabel_links + 1
+	sta tabel_ptr_links_hi + 1
+	lda #>regel_tabel_links + 1
+	sta tabel_ptr_links_hi + 2
+!skip:
 	rts
 
+regel_tabel_links:
+	.word regel3_links, regel5_links, regel2_links, regel4_links, regel1_links
+regel_tabel_links_eind:
+
+regel_tabel_rechts:
+	.word regel2_rechts, regel4_rechts, regel1_rechts, regel3_rechts, regel5_rechts
+regel_tabel_rechts_eind:
+
 	.byte 0
-regel1:
+regel1_links:
 	.text "yo, daar zijn we weer"
+regel1_rechts:
 	.byte 0
-regel2:
-	.text "gezellig bij de hcc!"
+regel2_links:
+	.text "gezellig bij de hcc"
+regel2_rechts:
+	.byte '!'
 	.byte 0
-regel3:
-	.text "laten we eens iets moois maken!"
+regel3_links:
+	.text "laten we eens iets moois maken"
+regel3_rechts:
+	.byte '!'
 	.byte 0
-regel4:
-	.text "dit is een klein probeelsel"
+regel4_links:
+	.text "dit is een klein probeelse"
+regel4_rechts:
+	.byte 'l'
 	.byte 0
-regel5:
-	.text "geinig toch?"
+regel5_links:
+	.text "geinig toch"
+regel5_rechts:
+	.byte '?'
 	.byte 0
-regel_eind:
 
 #import "screen.asm"
