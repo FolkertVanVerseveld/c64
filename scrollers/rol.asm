@@ -10,10 +10,13 @@ BasicUpstart2(start)
 
 .var scherm = $0400
 .var wis_links = scherm + 4 * 40
-.var links = wis_links + 6
+.var links = wis_links + 3
 .var wis_rechts = scherm + 7 * 40
-.var rechts = wis_rechts + 39 - 6
+.var rechts = wis_rechts + 39 - 3
 
+//.var music = LoadSid("TV_Tunes_Mix.sid")
+.var music = LoadSid("Fun_Fun.sid")
+//.var music = LoadSid("Alternative_Fuel.sid")
 
 .var num1lo = $62
 .var num1hi = $63
@@ -28,6 +31,8 @@ start:
 	lda #$00
 	sta $d020
 	sta $d021
+	lda #music.startSong - 1
+	jsr music.init
 	jsr irq_init
 	jmp *
 
@@ -50,6 +55,9 @@ irq:
 	// BEGIN kernel
 	inc $d020
 	jsr scroll
+	inc $d020
+	jsr music.play
+	dec $d020
 	dec $d020
 	// EIND kernel
 	pla
@@ -58,6 +66,8 @@ irq:
 	tax
 	pla
 	rti
+
+.var stappen = 20
 
 scroll:
 	lda #$00
@@ -157,6 +167,16 @@ text_ptr_rechts:
 	rts
 	// reset links logic
 !done:
+	// maak vertraging...
+teller:
+	lda #stappen
+	beq !skip+
+	dec teller + 1
+	rts
+!skip:
+	lda #stappen
+	sta teller + 1
+
 	// ik wil het eigenlijk anders doen,
 	// maar wis beide regels
 	lda #' '
@@ -218,11 +238,11 @@ tabel_ptr_links_hi:
 	rts
 
 regel_tabel_links:
-	.word regel3_links, regel5_links, regel2_links, regel4_links, regel1_links
+	.word regel3_links, regel5_links, regel1_links
 regel_tabel_links_eind:
 
 regel_tabel_rechts:
-	.word regel2_rechts, regel4_rechts, regel1_rechts, regel3_rechts, regel5_rechts
+	.word regel2_rechts, regel4_rechts, regel6_rechts
 regel_tabel_rechts_eind:
 
 	.byte 0
@@ -250,5 +270,17 @@ regel5_links:
 regel5_rechts:
 	.byte '?'
 	.byte 0
+regel6_links:
+	.text "code by metho"
+regel6_rechts:
+	.byte 's'
+	.byte 0
 
 #import "screen.asm"
+
+	* = music.location "music"
+
+	.fill music.size, music.getData(i)
+
+	.print "music_init = $" + toHexString(music.init)
+	.print "music_play = $" + toHexString(music.play)
