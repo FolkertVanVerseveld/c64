@@ -4,11 +4,15 @@
 BasicUpstart2(start)
 
 .var scr_clear_char = ' '
-.var scr_clear_color = $0f
+.var scr_clear_color = $00
 
 	* = $0810 "start"
 
+.var vic = $0000
+
 .var scherm = $0400
+.var spr_data = vic + $2400
+
 .var wis_links = scherm + 4 * 40
 .var links = wis_links + 3
 .var wis_rechts = scherm + 7 * 40
@@ -26,15 +30,87 @@ BasicUpstart2(start)
 .var reshi = $67
 .var delta = $68
 
+.var irq_line_top = $20
+.var irq_line_bottom = $e0
+.var irq_line_bottom2 = $20
+
 start:
 	jsr scr_clear
-	lda #$00
+	lda #$03
 	sta $d020
 	sta $d021
 	lda #music.startSong - 1
 	jsr music.init
+	jsr spr_init
 	jsr irq_init
 	jmp *
+
+irq_init:
+	// zet irq done
+	sei
+	lda #<irq_top
+	sta $0314
+	lda #>irq_top
+	sta $0315
+	// zorg dat de irq gebruikt wordt
+	asl $d019
+
+	// geen idee wat dit precies doet
+	// het zet alle interrupts eerst uit en dan
+	// de volgende aan: timer a, timer b, flag pin, serial shift
+	lda #$7b
+	sta $dc0d
+
+	// zet raster interrupt aan
+	lda #$81
+	sta $d01a
+
+	// bit-7 van de te schrijven waarde is bit-8 van de interruptregel (hier 0)
+	// tekst mode (bit-5 uit)
+	// scherm aan (bit-4 aan)
+	// 25 rijen (bit-3 aan)
+	// y scroll = 3 (bits 0-2)
+	lda $d011
+	and #%01111111
+	sta $d011
+
+	// de onderste 8-bits van de interruptregel.
+	// dus: regel $80 (128)
+	lda #irq_line_top
+	sta $d012
+	lda $d011
+	and #$7F
+	sta $d011
+
+	// vanaf nu kunnen de interrupts gevuurd worden
+	cli
+
+	rts
+
+spr_init:
+	// setup sprite at $0340 (== 13 * 64)
+	lda #(spr_data - vic + 64 * 0) / 64
+	sta scherm + $03f8
+	// copy sprites
+	ldx #0
+!l:
+	lda m0spr, x
+	sta spr_data + 64 * 0, x
+	// sprite 4 is identical to sprite 3
+	inx
+	cpx #64
+	bne !l-
+	// show sprites
+	lda #$01
+	sta $d015
+	lda #$00
+	sta $d027
+
+	lda #$a0
+	sta $d000
+	lda #$80
+	sta $d001
+	rts
 
 // add 8-bit constant to 16-bit number
 
@@ -48,9 +124,7 @@ add8_16:
 !ok:
 	rts
 
-#import "../irq/krnl1.asm"
-
-irq:
+irq_top:
 	asl $d019
 	// BEGIN kernel
 	inc $d020
@@ -58,6 +132,15 @@ irq:
 	inc $d020
 	jsr music.play
 	dec $d020
+
+	lda #<irq_bottom
+	sta $0314
+	lda #>irq_bottom
+	sta $0315
+
+	lda #irq_line_bottom
+	sta $d012
+
 	dec $d020
 	// EIND kernel
 	pla
@@ -67,7 +150,65 @@ irq:
 	pla
 	rti
 
-.var stappen = 20
+irq_bottom:
+	asl $d019
+	// BEGIN kernel
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	lda #$05
+	sta $d020
+	sta $d021
+
+	lda #<irq_bottom2
+	sta $0314
+	lda #>irq_bottom2
+	sta $0315
+
+	lda #irq_line_bottom2
+	sta $d012
+	lda $d011
+	ora #$80
+	sta $d011
+
+	// EIND kernel
+	pla
+	tay
+	pla
+	tax
+	pla
+	rti
+
+irq_bottom2:
+	asl $d019
+
+	lda #$03
+	sta $d020
+	sta $d021
+
+	lda #<irq_top
+	sta $0314
+	lda #>irq_top
+	sta $0315
+
+	lda #irq_line_top
+	sta $d012
+	lda $d011
+	and #$7f
+	sta $d011
+
+	// EIND kernel
+	pla
+	tay
+	pla
+	tax
+	pla
+	rti
+
+.var stappen = 40
 
 scroll:
 	lda #$00
@@ -187,7 +328,7 @@ teller:
 	inx
 	cpx #40
 	bne !l-
-	inc $d020
+	//inc $d020
 	dec scroll + 1
 tabel_ptr_links_lo:
 	lda regel_tabel_links
@@ -284,3 +425,28 @@ regel6_rechts:
 
 	.print "music_init = $" + toHexString(music.init)
 	.print "music_play = $" + toHexString(music.play)
+
+.align $100
+m0spr:
+	.byte %00000000, %01111111, %00000000
+	.byte %00000001, %11111111, %11000000
+	.byte %00000011, %11111111, %11100000
+	.byte %00000011, %11100011, %11100000
+	.byte %00000111, %11011100, %11110000
+	.byte %00000111, %11011101, %11110000
+	.byte %00000111, %11011100, %11110000
+	.byte %00000011, %11100011, %11100000
+	.byte %00000011, %11111111, %11100000
+	.byte %00000011, %11111111, %11100000
+	.byte %00000010, %11111111, %10100000
+	.byte %00000001, %01111111, %01000000
+	.byte %00000001, %00111110, %01000000
+	.byte %00000000, %10011100, %10000000
+	.byte %00000000, %10011100, %10000000
+	.byte %00000000, %01001001, %00000000
+	.byte %00000000, %01001001, %00000000
+	.byte %00000000, %00111110, %00000000
+	.byte %00000000, %00111110, %00000000
+	.byte %00000000, %00111110, %00000000
+	.byte %00000000, %00011100, %00000000
+	.byte 0
