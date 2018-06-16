@@ -31,11 +31,25 @@ BasicUpstart2(start)
 .var delta = $68
 
 .var irq_line_top = $20
-.var irq_line_bottom = $e0
+.var irq_line_grond = $be
+.var irq_line_bottom = $e2
 .var irq_line_bottom2 = $20
+
+.var colram = $d800
+
+.var scroll_screen = scherm + 20 * 40
+.var scroll_colram = colram + 20 * 40
 
 start:
 	jsr scr_clear
+	lda #$08
+	ldx #$ff
+!l:
+	sta scroll_colram, x
+	dex
+	bne !l-
+	lda $d016
+	sta scroll_oud
 	lda #$03
 	sta $d020
 	sta $d021
@@ -44,6 +58,9 @@ start:
 	jsr spr_init
 	jsr irq_init
 	jmp *
+
+scroll_oud:
+	.byte 0
 
 irq_init:
 	// zet irq done
@@ -103,7 +120,7 @@ spr_init:
 	// show sprites
 	lda #$01
 	sta $d015
-	lda #$00
+	lda #$04
 	sta $d027
 
 	lda #$70
@@ -131,17 +148,41 @@ balon:
 	lda sinus2, x
 	sta $d000
 	inc balon_pos
-	inc $d020
 	rts
 
 irq_top:
 	asl $d019
 	// BEGIN kernel
-	inc $d020
-	jsr scroll
+	//inc $d020
+	jsr scroll_tekst
 	jsr balon
 	jsr music.play
-	dec $d020
+
+	lda #<irq_grond
+	sta $0314
+	lda #>irq_grond
+	sta $0315
+
+	lda #irq_line_grond
+	sta $d012
+
+	//dec $d020
+	// EIND kernel
+	pla
+	tay
+	pla
+	tax
+	pla
+	rti
+
+irq_grond:
+	asl $d019
+	// BEGIN kernel
+	//inc $d020
+
+	jsr scroll
+
+	//dec $d020
 
 	lda #<irq_bottom
 	sta $0314
@@ -151,7 +192,6 @@ irq_top:
 	lda #irq_line_bottom
 	sta $d012
 
-	dec $d020
 	// EIND kernel
 	pla
 	tay
@@ -172,6 +212,8 @@ irq_bottom:
 	lda #$05
 	sta $d020
 	sta $d021
+	lda scroll_oud
+	sta $d016
 
 	lda #<irq_bottom2
 	sta $0314
@@ -218,9 +260,9 @@ irq_bottom2:
 	pla
 	rti
 
-.var stappen = 40
+.var stappen = 60
 
-scroll:
+scroll_tekst:
 	lda #$00
 	bne !a+
 	jmp scroll_links
@@ -246,7 +288,7 @@ text_ptr_links:
 	rts
 	// reset rechts logic
 !done:
-	inc scroll + 1
+	inc scroll_tekst + 1
 tabel_ptr_rechts_lo:
 	lda regel_tabel_rechts
 	sta rol_ptr_rechts + 1
@@ -339,7 +381,7 @@ teller:
 	cpx #40
 	bne !l-
 	//inc $d020
-	dec scroll + 1
+	dec scroll_tekst + 1
 tabel_ptr_links_lo:
 	lda regel_tabel_links
 	sta rol_ptr_links + 1
@@ -389,11 +431,13 @@ tabel_ptr_links_hi:
 	rts
 
 regel_tabel_links:
-	.word regel3_links, regel5_links, regel7_links, regel1_links
+	.word regel3_links, regel5_links, regel7_links, regel9_links, regel11_links, regel13_links, regel15_links, regel17_links
+	.word regel19_links, regel21_links, regel23_links, regel1_links
 regel_tabel_links_eind:
 
 regel_tabel_rechts:
-	.word regel2_rechts, regel4_rechts, regel6_rechts, regel8_rechts
+	.word regel2_rechts, regel4_rechts, regel6_rechts, regel8_rechts, regel10_rechts, regel12_rechts, regel14_rechts, regel16_rechts
+	.word regel18_rechts, regel20_rechts, regel22_rechts, regel24_rechts
 regel_tabel_rechts_eind:
 
 	.byte 0
@@ -436,17 +480,205 @@ regel8_links:
 regel8_rechts:
 	.byte 'e'
 	.byte 0
+regel9_links:
+	.text "vriendelijke groeten aa"
+regel9_rechts:
+	.byte 'n'
+	.byte 0
+regel10_links:
+	.text "jan, wolf, fred, dunca"
+regel10_rechts:
+	.byte 'n'
+	.byte 0
+regel11_links:
+	.text "shape, abyss connection, censo"
+regel11_rechts:
+	.byte 'r'
+	.byte 0
+regel12_links:
+	.text "f4cg, fairlight, genesis p, monocero"
+regel12_rechts:
+	.byte 's'
+	.byte 0
+regel13_links:
+	.text "bij revision 2018 had i"
+regel13_rechts:
+	.byte 'k'
+	.byte 0
+regel14_links:
+	.text "mijn eerste demo uitgebrach"
+regel14_rechts:
+	.byte 't'
+	.byte 0
+regel15_links:
+	.text "en sinds kort ben ik li"
+regel15_rechts:
+	.byte 'd'
+	.byte 0
+regel16_links:
+	.text "van de demogroep f4cg"
+regel16_rechts:
+	.byte '!'
+	.byte 0
+regel17_links:
+	.text "ze smasher had me gevraag"
+	.byte 'd'
+	.byte 0
+regel17_rechts:
+	.text "en dat vond ik heel gaaf"
+	.byte '!'
+	.byte 0
+regel18_links:
+	.text "daarnaast ben ik met anto"
+regel18_rechts:
+	.byte 'n'
+	.byte 0
+regel19_links:
+	.text "een scener die een winterslaap ha"
+regel19_rechts:
+	.byte 'd'
+	.byte 0
+regel20_links:
+	.text "begonnen om een groe"
+regel20_rechts:
+	.byte 'p'
+	.byte 0
+regel21_links:
+	.text "op te richte"
+regel21_rechts:
+	.byte 'n'
+	.byte 0
+regel22_links:
+	.text "we hopen op x2018 een cool"
+regel22_rechts:
+	.byte 'e'
+	.byte 0
+regel23_links:
+	.text "demo uit te brenge"
+regel23_rechts:
+	.byte 'n'
+	.byte 0
+regel24_links:
+	.text "maar dat zien we nog wel"
+regel24_rechts:
+	.byte '!'
+	.byte 0
+
+//regel22_links:
+	//.text "we zijn voornamelijk dinge"
+//regel22_rechts:
+	//.byte 'n'
+	//.byte 0
+//regel23_links:
+	//.text "aan het proberen en uitdenke"
+//regel23_rechts:
+	//.byte 'n'
+	//.byte 0
 
 #import "screen.asm"
+
+scroll:
+	// verplaats horizontaal
+	lda scroll_xpos
+	sec
+	sbc scroll_speed
+	and #$07
+	sta scroll_xpos
+	bcc !move+
+	jmp !klaar+
+!move:
+	// verplaats alles één naar links
+	ldx #$00
+!l:
+	lda scroll_screen + 1, x
+	sta scroll_screen, x
+	lda scroll_screen + 40 + 1, x
+	sta scroll_screen + 40, x
+	inx
+	cpx #40
+	bne !l-
+
+	// haal eentje op uit de rij
+!textptr:
+	lda scroll_text
+	cmp #$ff
+	bne !nowrap+
+	jsr scroll_herstel
+!nowrap:
+	sta scroll_screen + 39
+!textptr2:
+	lda scroll_text2
+	sta scroll_screen + 39 + 40
+	// werk text ptr bij
+	inc !textptr- + 1
+	bne !skip+
+	inc !textptr- + 2
+!skip:
+	inc !textptr2- + 1
+	bne !skip+
+	inc !textptr2- + 2
+!skip:
+!klaar:
+	// pas horizontale verplaatsing toe
+	lda #$c0
+	ora scroll_xpos
+	sta $d016
+	rts
+
+scroll_herstel:
+	// herstel ptr
+	lda #<scroll_text
+	sta !textptr- + 1
+	lda #>scroll_text
+	sta !textptr- + 2
+	lda #<scroll_text2
+	sta !textptr2- + 1
+	lda #>scroll_text2
+	sta !textptr2- + 2
+	lda scroll_text
+	rts
 
 balon_pos:
 	.byte 0
 
 // sprite movement table
 sinus:
-	.fill $100, round($94 + $6 * sin(toRadians(i * 2 * 360 / $100)))
+	.fill $100, round($8c + $6 * sin(toRadians(i * 2 * 360 / $100)))
 sinus2:
 	.fill $100, round($70 + $12 * sin(toRadians(i * 360 / $100)))
+
+scroll_xpos:
+	.byte 0
+scroll_speed:
+	.byte 2
+scroll_text:
+	//.text "hey, deze scroller kan alleen van rechts naar links bewegen. "
+	//.text "hij gaat door tot 0xff en dan weer rond. "
+	//.fill $100, i
+	.byte ' ', ' ', ' ', ' ', ' '
+	.byte 233, 160, 227, 248, 121, ' '
+	.byte ' ', ' ', ' ', ' ', ' ', ' '
+	.byte 121, 121
+	.byte ' ', ' ', ' '
+	.byte 233, 160, 223
+	.byte ' ', ' ', ' ', ' ', ' ', ' ', ' '
+	.byte 233, 160, 160, 223
+	.byte ' ', ' ', ' ', ' ', ' ', ' ', ' '
+	.byte 121, ' ', ' ', ' ', ' ', ' ', ' '
+	.byte $ff
+scroll_text2:
+	//.byte 160, 160, 160, 160, 160, 160, 160, 160, 160, 160, 160, 160, 160
+	.byte ' ', ' ', ' ', ' ', 233
+	.byte 160, 160, 160, 160, 160, 160
+	.byte 223, ' ', ' ', ' ', ' ', 233
+	.byte 160, 160
+	.byte 160, 223, 233
+	.byte 160, 160, 160
+	.byte 223, ' ', ' ', ' ', ' ', ' ', 233
+	.byte 160, 160, 160, 160
+	.byte 160, 160, 160, 227, 227, 227, 160
+	.byte 160, 160, 223, ' ', 121, 121, ' '
+	.byte $ff
 
 	* = music.location "music"
 
