@@ -13,6 +13,8 @@ BasicUpstart2(start)
 .var scherm = $0400
 .var spr_data = vic + $2400
 
+.var font = vic + $2000
+
 .var wis_links = scherm + 4 * 40
 .var links = wis_links + 3
 .var wis_rechts = scherm + 7 * 40
@@ -31,7 +33,7 @@ BasicUpstart2(start)
 .var delta = $68
 
 .var irq_line_top = $20
-.var irq_line_grond = $be
+.var irq_line_grond = $b0
 .var irq_line_bottom = $e2
 .var irq_line_bottom2 = $20
 
@@ -43,16 +45,19 @@ BasicUpstart2(start)
 start:
 	jsr scr_clear
 	lda #$08
-	ldx #$ff
+	ldx #$00
 !l:
 	sta scroll_colram, x
 	dex
 	bne !l-
+
 	lda $d016
 	sta scroll_oud
 	lda #$03
 	sta $d020
 	sta $d021
+	lda $d018
+	sta mem_old
 	lda #music.startSong - 1
 	jsr music.init
 	jsr spr_init
@@ -152,6 +157,12 @@ balon:
 
 irq_top:
 	asl $d019
+
+	lda mem_old
+	and #$f0
+	ora #%00001000
+	sta $d018
+
 	// BEGIN kernel
 	//inc $d020
 	jsr scroll_tekst
@@ -175,12 +186,18 @@ irq_top:
 	pla
 	rti
 
+mem_old:
+	.byte 0
+
 irq_grond:
 	asl $d019
 	// BEGIN kernel
 	//inc $d020
 
 	jsr scroll
+
+	lda mem_old
+	sta $d018
 
 	//dec $d020
 
@@ -555,17 +572,6 @@ regel23_links:
 regel23_rechts:
 	.byte 'e'
 	.byte 0
-regel24_links:
-	.text "demo uit te brenge"
-regel24_rechts:
-	.byte 'n'
-	.byte 0
-
-regel25_links:
-	.text "we zijn voornamelijk dinge"
-regel25_rechts:
-	.byte 'n'
-	.byte 0
 
 #import "screen.asm"
 
@@ -703,6 +709,17 @@ m0spr:
 	.byte %00000000, %00011100, %00000000
 	.byte 0
 
+regel24_links:
+	.text "demo uit te brenge"
+regel24_rechts:
+	.byte 'n'
+	.byte 0
+
+regel25_links:
+	.text "we zijn voornamelijk dinge"
+regel25_rechts:
+	.byte 'n'
+	.byte 0
 regel26_links:
 	.text "aan het proberen en uitdenke"
 regel26_rechts:
@@ -718,3 +735,7 @@ regel28_links:
 regel28_rechts:
 	.byte '!'
 	.byte 0
+
+	* = font "font"
+
+	.import binary "../intro/aeg_collection_05.64c", 2
