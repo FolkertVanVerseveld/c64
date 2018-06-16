@@ -106,7 +106,7 @@ spr_init:
 	lda #$00
 	sta $d027
 
-	lda #$a0
+	lda #$70
 	sta $d000
 	lda #$80
 	sta $d001
@@ -124,12 +124,22 @@ add8_16:
 !ok:
 	rts
 
+balon:
+	ldx balon_pos
+	lda sinus, x
+	sta $d001
+	lda sinus2, x
+	sta $d000
+	inc balon_pos
+	inc $d020
+	rts
+
 irq_top:
 	asl $d019
 	// BEGIN kernel
 	inc $d020
 	jsr scroll
-	inc $d020
+	jsr balon
 	jsr music.play
 	dec $d020
 
@@ -379,11 +389,11 @@ tabel_ptr_links_hi:
 	rts
 
 regel_tabel_links:
-	.word regel3_links, regel5_links, regel1_links
+	.word regel3_links, regel5_links, regel7_links, regel1_links
 regel_tabel_links_eind:
 
 regel_tabel_rechts:
-	.word regel2_rechts, regel4_rechts, regel6_rechts
+	.word regel2_rechts, regel4_rechts, regel6_rechts, regel8_rechts
 regel_tabel_rechts_eind:
 
 	.byte 0
@@ -407,17 +417,36 @@ regel4_rechts:
 	.byte 'l'
 	.byte 0
 regel5_links:
-	.text "geinig toch"
+	.text "dit was een paar uurtjes wer"
 regel5_rechts:
-	.byte '?'
+	.byte 'k'
 	.byte 0
 regel6_links:
-	.text "code by metho"
+	.text "geinig toch"
 regel6_rechts:
+	.byte '?'
+	.byte 0
+regel7_links:
+	.text "code door metho"
+regel7_rechts:
 	.byte 's'
+	.byte 0
+regel8_links:
+	.text "muziek door wav"
+regel8_rechts:
+	.byte 'e'
 	.byte 0
 
 #import "screen.asm"
+
+balon_pos:
+	.byte 0
+
+// sprite movement table
+sinus:
+	.fill $100, round($94 + $6 * sin(toRadians(i * 2 * 360 / $100)))
+sinus2:
+	.fill $100, round($70 + $12 * sin(toRadians(i * 360 / $100)))
 
 	* = music.location "music"
 
