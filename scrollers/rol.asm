@@ -260,7 +260,7 @@ irq_bottom2:
 	pla
 	rti
 
-.var stappen = 60
+.var stappen = 120
 
 scroll_tekst:
 	lda #$00
@@ -432,12 +432,12 @@ tabel_ptr_links_hi:
 
 regel_tabel_links:
 	.word regel3_links, regel5_links, regel7_links, regel9_links, regel11_links, regel13_links, regel15_links, regel17_links
-	.word regel19_links, regel21_links, regel23_links, regel1_links
+	.word regel19_links, regel21_links, regel23_links, regel25_links, regel27_links, regel1_links
 regel_tabel_links_eind:
 
 regel_tabel_rechts:
 	.word regel2_rechts, regel4_rechts, regel6_rechts, regel8_rechts, regel10_rechts, regel12_rechts, regel14_rechts, regel16_rechts
-	.word regel18_rechts, regel20_rechts, regel22_rechts, regel24_rechts
+	.word regel18_rechts, regel20_rechts, regel22_rechts, regel24_rechts, regel26_rechts, regel28_rechts
 regel_tabel_rechts_eind:
 
 	.byte 0
@@ -522,58 +522,50 @@ regel16_rechts:
 	.byte 0
 regel17_links:
 	.text "ze smasher had me gevraag"
-	.byte 'd'
-	.byte 0
 regel17_rechts:
-	.text "en dat vond ik heel gaaf"
-	.byte '!'
+	.byte 'd'
 	.byte 0
 regel18_links:
-	.text "daarnaast ben ik met anto"
+	.text "en dat vond ik heel gaaf"
 regel18_rechts:
-	.byte 'n'
-	.byte 0
-regel19_links:
-	.text "een scener die een winterslaap ha"
-regel19_rechts:
-	.byte 'd'
-	.byte 0
-regel20_links:
-	.text "begonnen om een groe"
-regel20_rechts:
-	.byte 'p'
-	.byte 0
-regel21_links:
-	.text "op te richte"
-regel21_rechts:
-	.byte 'n'
-	.byte 0
-regel22_links:
-	.text "we hopen op x2018 een cool"
-regel22_rechts:
-	.byte 'e'
-	.byte 0
-regel23_links:
-	.text "demo uit te brenge"
-regel23_rechts:
-	.byte 'n'
-	.byte 0
-regel24_links:
-	.text "maar dat zien we nog wel"
-regel24_rechts:
 	.byte '!'
 	.byte 0
+regel19_links:
+	.text "daarnaast ben ik met anto"
+regel19_rechts:
+	.byte 'n'
+	.byte 0
+regel20_links:
+	.text "een scener die een winterslaap ha"
+regel20_rechts:
+	.byte 'd'
+	.byte 0
+regel21_links:
+	.text "begonnen om een groe"
+regel21_rechts:
+	.byte 'p'
+	.byte 0
+regel22_links:
+	.text "op te richte"
+regel22_rechts:
+	.byte 'n'
+	.byte 0
+regel23_links:
+	.text "we hopen op x2018 een cool"
+regel23_rechts:
+	.byte 'e'
+	.byte 0
+regel24_links:
+	.text "demo uit te brenge"
+regel24_rechts:
+	.byte 'n'
+	.byte 0
 
-//regel22_links:
-	//.text "we zijn voornamelijk dinge"
-//regel22_rechts:
-	//.byte 'n'
-	//.byte 0
-//regel23_links:
-	//.text "aan het proberen en uitdenke"
-//regel23_rechts:
-	//.byte 'n'
-	//.byte 0
+regel25_links:
+	.text "we zijn voornamelijk dinge"
+regel25_rechts:
+	.byte 'n'
+	.byte 0
 
 #import "screen.asm"
 
@@ -667,7 +659,6 @@ scroll_text:
 	.byte 121, ' ', ' ', ' ', ' ', ' ', ' '
 	.byte $ff
 scroll_text2:
-	//.byte 160, 160, 160, 160, 160, 160, 160, 160, 160, 160, 160, 160, 160
 	.byte ' ', ' ', ' ', ' ', 233
 	.byte 160, 160, 160, 160, 160, 160
 	.byte 223, ' ', ' ', ' ', ' ', 233
@@ -710,4 +701,20 @@ m0spr:
 	.byte %00000000, %00111110, %00000000
 	.byte %00000000, %00111110, %00000000
 	.byte %00000000, %00011100, %00000000
+	.byte 0
+
+regel26_links:
+	.text "aan het proberen en uitdenke"
+regel26_rechts:
+	.byte 'n'
+	.byte 0
+regel27_links:
+	.text "maar we zien nog we"
+regel27_rechts:
+	.byte 'l'
+	.byte 0
+regel28_links:
+	.text "of het allemaal gaat lukken"
+regel28_rechts:
+	.byte '!'
 	.byte 0
