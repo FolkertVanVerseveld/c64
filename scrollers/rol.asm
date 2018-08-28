@@ -20,9 +20,11 @@ BasicUpstart2(start)
 .var wis_rechts = scherm + 7 * 40
 .var rechts = wis_rechts + 39 - 3
 
-//.var music = LoadSid("TV_Tunes_Mix.sid")
-.var music = LoadSid("Fun_Fun.sid")
-//.var music = LoadSid("Alternative_Fuel.sid")
+// Update these to your HVSC directory
+
+//.var music = LoadSid("/home/methos/Music/C64Music/MUSICIANS/0-9/20CC/TV_Tunes_Mix.sid")
+.var music = LoadSid("/home/methos/Music/C64Music/MUSICIANS/T/Tel_Jeroen/Fun_Fun.sid")
+//.var music = LoadSid("/home/methos/Music/C64Music/MUSICIANS/T/Tel_Jeroen/Alternative_Fuel.sid")
 
 .var num1lo = $62
 .var num1hi = $63
@@ -738,4 +740,4 @@ regel28_rechts:
 
 	* = font "font"
 
-	.import binary "../intro/aeg_collection_05.64c", 2
+	.import binary "../assets/aeg_collection_05.64c", 2

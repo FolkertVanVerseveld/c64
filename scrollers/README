@@ -1,0 +1,8 @@
+Simple scroller demos
+
+Note that some scrollers play background music and that these paths are
+hardcoded as absolute paths. You have to download the High Voltage Sid
+Collection (see hvsc.c64.org) and specify the absolute path to the SIDs.
+
+The programs are tested with HVSC #66, but should work for other versions as
+well.
