@@ -7,9 +7,10 @@
 .const colram  = $d800
 .const sidbase = $d400
 
-.var methos = LoadBinary("methos.koa", BF_KOALA)
+.var methos = LoadBinary("../assets/methos.koa", BF_KOALA)
 
-.var music = LoadSid("4Ten5.sid")
+// Update this to your local HVSC directory
+.var music = LoadSid("/home/methos/Music/C64Music/MUSICIANS/M/MHD/4Ten5.sid")
 
 .const line_scroll = $78
 .const line_music = $83
@@ -337,7 +338,7 @@ methos_colram:
 
 * = font "font"
 
-	.import binary "aeg_collection_05.64c", 2
+	.import binary "../assets/aeg_collection_05.64c", 2
 
 * = bitmap "Methos Bitmap";
 	.fill methos.getBitmapSize(), methos.getBitmap(i)

@@ -10,7 +10,8 @@ BasicUpstart2(start)
 .var irq_line_bottom = $fc
 //.var spr_data = $2800
 
-.var music = LoadSid("Spijkerhoek.sid")
+// Update this to your HVSC directory
+.var music = LoadSid("/home/methos/Music/C64Music/MUSICIANS/0-9/20CC/van_Santen_Edwin/Spijkerhoek.sid")
 
 //set variables and locations
 .var buf = $2700
@@ -600,13 +601,13 @@ siny2:
 
 	* = font "font"
 
-	.import binary "aeg_collection_05.64c", 2
+	.import binary "../assets/aeg_collection_05.64c", 2
 
 	* = bitmap "bitmap"
-	.import binary "uva.koa", 2, 8000
+	.import binary "../assets/uva.koa", 2, 8000
 
 	* = screen "screen"
-	.import binary "uva.koa", 2 + 8000, 40 * 25
+	.import binary "../assets/uva.koa", 2 + 8000, 40 * 25
 
 	* = buf "buf"
-	.import binary "uva.koa", 2 + 8000 + 40 * 25, 40 * 25
+	.import binary "../assets/uva.koa", 2 + 8000 + 40 * 25, 40 * 25
