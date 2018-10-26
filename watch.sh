@@ -1,6 +1,6 @@
 #!/bin/bash
 while :; do
-	inotifywait -qre modify test.asm *.tbl
-	java -jar /home/methos/bin/kickass-4.4/KickAss.jar test.asm
-	python sock.py p test.prg 192.168.2.64
+	inotifywait -qre modify test.asm
+	kickass test.asm
+	python sock.py p test.prg 172.28.1.105
 done
