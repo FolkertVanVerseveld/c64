@@ -185,6 +185,9 @@ step_snake_right:
 	bmi !down+
 	beq !next+
 	jmp step_snake_up
+!next:
+	lda #$51
+	jsr next_dot
 !move:
 	lda snake_x
 	cmp #39
@@ -198,10 +201,6 @@ step_snake_right:
 	rts
 !down:
 	jmp step_snake_down
-!next:
-!hang:
-	inc $d020
-	jmp !hang-
 
 step_snake_up:
 	mov #2 : snake_dir
@@ -210,9 +209,12 @@ step_snake_up:
 	bne !move+
 	lda snake_x
 	cmp dot_x
-	bmi !left+
+	bmi !right+
 	beq !next+
-	jmp step_snake_right
+	jmp step_snake_left
+!next:
+	lda #$51
+	jsr next_dot
 !move:
 	lda snake_y
 	beq !wrap+
@@ -223,15 +225,23 @@ step_snake_up:
 	mov16 #24 * 40 : snake_dp
 	mov #24 : snake_y
 	rts
-!left:
-	jmp step_snake_left
-!next:
-!hang:
-	inc $d020
-	jmp !hang-
+!right:
+	jmp step_snake_right
 
 step_snake_left:
 	mov #4 : snake_dir
+	lda snake_x
+	cmp dot_x
+	bne !move+
+	lda snake_y
+	cmp dot_y
+	bmi !down+
+	beq !next+
+	jmp step_snake_up
+!next:
+	lda #$51
+	jsr next_dot
+!move:
 	lda snake_x
 	beq !wrap+
 	mov16 #-1 : snake_dp
@@ -241,9 +251,23 @@ step_snake_left:
 	mov16 #39 : snake_dp
 	mov #39 : snake_x
 	rts
+!down:
+	jmp step_snake_down
 
 step_snake_down:
 	mov #6 : snake_dir
+	lda snake_y
+	cmp dot_y
+	bne !move+
+	lda snake_x
+	cmp dot_x
+	bmi !right+
+	beq !next+
+	jmp step_snake_left
+!next:
+	lda #$51
+	jsr next_dot
+!move:
 	lda snake_y
 	cmp #24
 	beq !wrap+
@@ -254,3 +278,5 @@ step_snake_down:
 	mov16 #-24 * 40 : snake_dp
 	mov #0 : snake_y
 	rts
+!right:
+	jmp step_snake_right
