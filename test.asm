@@ -11,6 +11,7 @@ BasicUpstart2(main)
 
 .var irq_line_top = $20
 .var tmp = $ff
+.var grow = 4
 
 // characters:
 //
@@ -73,6 +74,8 @@ snake_init:
 	mov dot_y : snake_y
 	mov dot_x : snake_x
 	mov16 dot_pos : snake_pos
+	// setup other snake stuff
+	mov #grow : snake_grow
 	// setup target
 	lda #$51
 	jsr next_dot
@@ -107,7 +110,7 @@ next_dot:
 step:
 	// TODO change direction after some steps
 snake_step:
-	// check for xwrap
+	// setup snake movement code
 	ldx snake_dir
 	lda fptr_snake, x
 	sta !fptr+ + 1
@@ -115,6 +118,13 @@ snake_step:
 	sta !fptr+ + 2
 !fptr:
 	jsr !hang+
+
+	// TODO check if snake needs to grow
+//	ldx snake_grow
+//!hang:
+//	beq !hang-
+//	dex
+//	stx snake_grow
 
 	// advance head
 	lda snake_dp
@@ -169,22 +179,6 @@ snake_dir:
 	.byte 0
 snake_dp:
 	.word 0
-
-.align $100
-
-// precalculated random locations for dots
-dots_low:
-	.byte $34, $9A, $4D, $26, $13, $89, $44, $A2, $D1, $68, $34, $1A, $8D, $46, $23, $91, $C8, $E4, $72, $39, $9C, $CE, $E7, $F3, $F9, $FC, $7E, $BF, $5F, $AF, $57, $AB
-dots_high:
-	.byte $05, $04, $04, $06, $05, $06, $07, $05, $04, $04, $06, $05, $04, $06, $07, $07, $05, $04, $06, $07, $07, $07, $07, $04, $05, $06, $05, $06, $05, $06, $07, $07
-dots_y:
-	.byte $07, $03, $01, $0D, $06, $10, $14, $0A, $05, $02, $0E, $07, $03, $0E, $14, $16, $0B, $05, $0F, $14, $17, $18, $18, $07, $0C, $13, $09, $11, $08, $11, $15, $17
-dots_x:
-	.byte $1C, $22, $25, $1E, $23, $09, $24, $12, $09, $18, $04, $02, $15, $16, $03, $21, $10, $1C, $1A, $19, $04, $0E, $27, $03, $19, $04, $16, $17, $1F, $07, $0F, $13
-// bytes used: 128
-
-fptr_snake:
-	.word step_snake_right, step_snake_up, step_snake_left, step_snake_down
 
 irq_top:
 	irq
@@ -290,3 +284,32 @@ step_snake_down:
 	rts
 !right:
 	jmp step_snake_right
+
+snake_head:
+	.byte 0
+snake_tail:
+	.byte 0
+snake_grow:
+	.byte 0
+
+.align $80
+
+// precalculated random locations for dots
+dots_low:
+	.byte $34, $9A, $4D, $26, $13, $89, $44, $A2, $D1, $68, $34, $1A, $8D, $46, $23, $91, $C8, $E4, $72, $39, $9C, $CE, $E7, $F3, $F9, $FC, $7E, $BF, $5F, $AF, $57, $AB
+dots_high:
+	.byte $05, $04, $04, $06, $05, $06, $07, $05, $04, $04, $06, $05, $04, $06, $07, $07, $05, $04, $06, $07, $07, $07, $07, $04, $05, $06, $05, $06, $05, $06, $07, $07
+dots_y:
+	.byte $07, $03, $01, $0D, $06, $10, $14, $0A, $05, $02, $0E, $07, $03, $0E, $14, $16, $0B, $05, $0F, $14, $17, $18, $18, $07, $0C, $13, $09, $11, $08, $11, $15, $17
+dots_x:
+	.byte $1C, $22, $25, $1E, $23, $09, $24, $12, $09, $18, $04, $02, $15, $16, $03, $21, $10, $1C, $1A, $19, $04, $0E, $27, $03, $19, $04, $16, $17, $1F, $07, $0F, $13
+// bytes used: 128
+
+fptr_snake:
+	.word step_snake_right, step_snake_up, step_snake_left, step_snake_down
+
+.align $20
+
+snakes_tbl:
+	.word 0, 0, 0, 0, 0, 0, 0, 0
+	.word 0, 0, 0, 0, 0, 0, 0, 0
