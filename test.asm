@@ -2,6 +2,11 @@
 
 BasicUpstart2(main)
 
+.var brkFile = createFile("breakpoints.txt")
+.macro break() {
+.eval brkFile.writeln("break " + toHexString(*))
+}
+
 #import "pseudo.lib"
 
 .var irq_line_top = $20
@@ -154,7 +159,7 @@ snake_y:
 snake_x:
 	.byte 0
 snake_dir:
-	.byte 2
+	.byte 6
 snake_dp:
 	.word 0
 
@@ -184,10 +189,7 @@ step_snake_right:
 	lda snake_x
 	cmp #39
 	beq !wrap+
-	lda #1
-	sta snake_dp
-	lda #0
-	sta snake_dp + 1
+	mov16 #1 : snake_dp
 	inc snake_x
 	rts
 !wrap:
@@ -205,7 +207,41 @@ step_snake_up:
 	mov16 #24 * 40 : snake_dp
 	mov #24 : snake_y
 	rts
+
 step_snake_left:
-step_snake_down:
-	inc $d021
+	lda snake_x
+	beq !wrap+
+	mov16 #-1 : snake_dp
+	dec snake_x
 	rts
+!wrap:
+	mov16 #39 : snake_dp
+	mov #39 : snake_x
+	rts
+
+step_snake_down:
+	//lda snake_pos
+	//sta $0401
+	//lda snake_pos + 1
+	//sta $0400
+	//lda snake_y
+	//sta $0400 + 40
+
+	lda snake_y
+	cmp #24
+	beq !wrap+
+	mov16 #40 : snake_dp
+	inc snake_y
+	rts
+!wrap:
+	//mov16 #$fc40 : snake_dp
+	//mov16 #-24 * 40 : snake_dp
+	//mov #0 : snake_y
+
+	//break()
+	mov16 #-24 * 40 : snake_dp
+	mov #0 : snake_y
+	rts
+
+kill:
+	.byte 0
