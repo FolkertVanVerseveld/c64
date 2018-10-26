@@ -10,7 +10,7 @@ BasicUpstart2(main)
 #import "pseudo.lib"
 
 .var irq_line_top = $20
-
+.var snake_steps = $30
 .var tmp = $ff
 
 // characters:
@@ -77,6 +77,8 @@ snake_init:
 	// setup target
 	lda #$51
 	jsr next_dot
+	// choose random direction for now
+	mov #snake_steps : counter
 	rts
 
 next_dot:
@@ -106,6 +108,19 @@ next_dot:
 	rts
 
 step:
+	// change direction after some steps
+	ldx counter
+	bne !l+
+	lda snake_dir
+	clc
+	adc #2
+	and #7
+	sta snake_dir
+	ldx #snake_steps
+!l:
+	dex
+	stx counter
+
 snake_step:
 	// check for xwrap
 	ldx snake_dir
@@ -124,17 +139,6 @@ snake_step:
 	lda snake_dp + 1
 	adc snake_pos + 1
 	sta snake_pos + 1
-//	ldx #$00
-//	lda snake_dp
-//	bpl !l+
-//	dex
-//!l:
-//	clc
-//	adc snake_pos
-//	sta snake_pos
-//	txa
-//	adc snake_pos + 1
-//	sta snake_pos + 1
 
 	// update head
 	mov16 snake_pos : !put_head+ + 1
@@ -165,6 +169,7 @@ snake_dp:
 
 .align $100
 
+// precalculated random locations for dots
 dots_low:
 	.byte $34, $9A, $4D, $26, $13, $89, $44, $A2, $D1, $68, $34, $1A, $8D, $46, $23, $91, $C8, $E4, $72, $39, $9C, $CE, $E7, $F3, $F9, $FC, $7E, $BF, $5F, $AF, $57, $AB
 dots_high:
@@ -220,13 +225,6 @@ step_snake_left:
 	rts
 
 step_snake_down:
-	//lda snake_pos
-	//sta $0401
-	//lda snake_pos + 1
-	//sta $0400
-	//lda snake_y
-	//sta $0400 + 40
-
 	lda snake_y
 	cmp #24
 	beq !wrap+
@@ -234,14 +232,9 @@ step_snake_down:
 	inc snake_y
 	rts
 !wrap:
-	//mov16 #$fc40 : snake_dp
-	//mov16 #-24 * 40 : snake_dp
-	//mov #0 : snake_y
-
-	//break()
 	mov16 #-24 * 40 : snake_dp
 	mov #0 : snake_y
 	rts
 
-kill:
+counter:
 	.byte 0
