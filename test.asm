@@ -10,7 +10,6 @@ BasicUpstart2(main)
 #import "pseudo.lib"
 
 .var irq_line_top = $20
-.var snake_steps = $30
 .var tmp = $ff
 
 // characters:
@@ -77,8 +76,6 @@ snake_init:
 	// setup target
 	lda #$51
 	jsr next_dot
-	// choose random direction for now
-	mov #snake_steps : counter
 	rts
 
 next_dot:
@@ -108,19 +105,7 @@ next_dot:
 	rts
 
 step:
-	// change direction after some steps
-	ldx counter
-	bne !l+
-	lda snake_dir
-	clc
-	adc #2
-	and #7
-	sta snake_dir
-	ldx #snake_steps
-!l:
-	dex
-	stx counter
-
+	// TODO change direction after some steps
 snake_step:
 	// check for xwrap
 	ldx snake_dir
@@ -163,7 +148,7 @@ snake_y:
 snake_x:
 	.byte 0
 snake_dir:
-	.byte 6
+	.byte 0
 snake_dp:
 	.word 0
 
@@ -191,6 +176,16 @@ irq_top:
 	qri
 
 step_snake_right:
+	mov #0 : snake_dir
+	lda snake_x
+	cmp dot_x
+	bne !move+
+	lda snake_y
+	cmp dot_y
+	bmi !down+
+	beq !next+
+	jmp step_snake_up
+!move:
 	lda snake_x
 	cmp #39
 	beq !wrap+
@@ -201,8 +196,24 @@ step_snake_right:
 	mov16 #-39 : snake_dp
 	mov #0 : snake_x
 	rts
+!down:
+	jmp step_snake_down
+!next:
+!hang:
+	inc $d020
+	jmp !hang-
 
 step_snake_up:
+	mov #2 : snake_dir
+	lda snake_y
+	cmp dot_y
+	bne !move+
+	lda snake_x
+	cmp dot_x
+	bmi !left+
+	beq !next+
+	jmp step_snake_right
+!move:
 	lda snake_y
 	beq !wrap+
 	mov16 #-40 : snake_dp
@@ -212,8 +223,15 @@ step_snake_up:
 	mov16 #24 * 40 : snake_dp
 	mov #24 : snake_y
 	rts
+!left:
+	jmp step_snake_left
+!next:
+!hang:
+	inc $d020
+	jmp !hang-
 
 step_snake_left:
+	mov #4 : snake_dir
 	lda snake_x
 	beq !wrap+
 	mov16 #-1 : snake_dp
@@ -225,6 +243,7 @@ step_snake_left:
 	rts
 
 step_snake_down:
+	mov #6 : snake_dir
 	lda snake_y
 	cmp #24
 	beq !wrap+
@@ -235,6 +254,3 @@ step_snake_down:
 	mov16 #-24 * 40 : snake_dp
 	mov #0 : snake_y
 	rts
-
-counter:
-	.byte 0
