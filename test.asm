@@ -126,11 +126,29 @@ snake_step:
 	sta snake_pos + 1
 
 	// update head
-	mov16 snake_pos : !put_head+ + 1
+	lda snake_pos
+	sta !fetch_head+ + 1
+	sta !put_head+ + 1
+	lda snake_pos + 1
+	sta !fetch_head+ + 2
+	sta !put_head+ + 2
+!fetch_head:
+	lda $0400
+	cmp #$e0
+	beq !die+
+	cmp #$51
+	bne !move+
+	lda #$51
+	jsr next_dot
+!move:
 	lda #$e0
 !put_head:
 	sta $0400
 !hang:
+	rts
+!die:
+	jsr clear
+	jsr snake_init
 	rts
 
 dot_index:
@@ -186,8 +204,6 @@ step_snake_right:
 	beq !next+
 	jmp step_snake_up
 !next:
-	lda #$51
-	jsr next_dot
 !move:
 	lda snake_x
 	cmp #39
@@ -213,8 +229,6 @@ step_snake_up:
 	beq !next+
 	jmp step_snake_left
 !next:
-	lda #$51
-	jsr next_dot
 !move:
 	lda snake_y
 	beq !wrap+
@@ -239,8 +253,6 @@ step_snake_left:
 	beq !next+
 	jmp step_snake_up
 !next:
-	lda #$51
-	jsr next_dot
 !move:
 	lda snake_x
 	beq !wrap+
@@ -265,8 +277,6 @@ step_snake_down:
 	beq !next+
 	jmp step_snake_left
 !next:
-	lda #$51
-	jsr next_dot
 !move:
 	lda snake_y
 	cmp #24
