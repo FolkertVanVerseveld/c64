@@ -2,6 +2,12 @@
 
 BasicUpstart2(main)
 
+#import "pseudo.lib"
+
+.var irq_line_top = $20
+
+.var tmp = $ff
+
 // characters:
 //
 // $40  ---
@@ -27,6 +33,20 @@ BasicUpstart2(main)
 main:
 	jsr clear
 	jsr snake_init
+
+	// inline: setup irq
+		mov #$35 : $01            // <- Notice how different addressing modes can be used
+		mov16 #irq_top : $fffe		  // <- 16 bit commands (or higher) can also be made
+		mov #$1b : $d011
+		mov #irq_line_top : $d012
+		mov #$81 : $d01a
+		mov #$7f : $dc0d
+		mov #$7f : $dd0d
+		lda $dc0d
+		lda $dd0d
+		mov #$ff : $d019
+		cli
+
 	jmp *
 
 // clear screen
@@ -43,13 +63,12 @@ clear:
 	rts
 
 snake_init:
-	lda #$40
+	lda #$e0
 	jsr next_dot
 	// remember our position
-	lda dot_y
-	sta snake_y
-	lda dot_x
-	sta snake_x
+	mov dot_y : snake_y
+	mov dot_x : snake_x
+	mov16 dot_pos : snake_pos
 	// setup target
 	lda #$51
 	jsr next_dot
@@ -59,11 +78,13 @@ next_dot:
 	tay
 	ldx dot_index
 !l:
-	// setup store address
+	// setup store address and save it elsewhere
 	lda dots_low, x
 	sta !put+ + 1
+	sta dot_pos
 	lda dots_high, x
 	sta !put+ + 2
+	sta dot_pos + 1
 	// save y and x
 	lda dots_y, x
 	sta dot_y
@@ -79,16 +100,63 @@ next_dot:
 	sta dot_index
 	rts
 
+step:
+snake_step:
+	// check for xwrap
+	ldx snake_dir
+	lda fptr_snake, x
+	sta !fptr+ + 1
+	lda fptr_snake + 1, x
+	sta !fptr+ + 2
+!fptr:
+	jsr !hang+
+
+	// advance head
+	lda snake_dp
+	clc
+	adc snake_pos
+	sta snake_pos
+	lda snake_dp + 1
+	adc snake_pos + 1
+	sta snake_pos + 1
+//	ldx #$00
+//	lda snake_dp
+//	bpl !l+
+//	dex
+//!l:
+//	clc
+//	adc snake_pos
+//	sta snake_pos
+//	txa
+//	adc snake_pos + 1
+//	sta snake_pos + 1
+
+	// update head
+	mov16 snake_pos : !put_head+ + 1
+	lda #$e0
+!put_head:
+	sta $0400
+!hang:
+	rts
+
 dot_index:
 	.byte 0
+dot_pos:
+	.word 0
 dot_y:
 	.byte 0
 dot_x:
 	.byte 0
+snake_pos:
+	.word 0
 snake_y:
 	.byte 0
 snake_x:
 	.byte 0
+snake_dir:
+	.byte 2
+snake_dp:
+	.word 0
 
 .align $100
 
@@ -102,3 +170,42 @@ dots_x:
 	.byte $1C, $22, $25, $1E, $23, $09, $24, $12, $09, $18, $04, $02, $15, $16, $03, $21, $10, $1C, $1A, $19, $04, $0E, $27, $03, $19, $04, $16, $17, $1F, $07, $0F, $13
 // bytes used: 128
 
+fptr_snake:
+	.word step_snake_right, step_snake_up, step_snake_left, step_snake_down
+
+irq_top:
+	irq
+	inc $d020
+	jsr step
+	dec $d020
+	qri
+
+step_snake_right:
+	lda snake_x
+	cmp #39
+	beq !wrap+
+	lda #1
+	sta snake_dp
+	lda #0
+	sta snake_dp + 1
+	inc snake_x
+	rts
+!wrap:
+	mov16 #-39 : snake_dp
+	mov #0 : snake_x
+	rts
+
+step_snake_up:
+	lda snake_y
+	beq !wrap+
+	mov16 #-40 : snake_dp
+	dec snake_y
+	rts
+!wrap:
+	mov16 #24 * 40 : snake_dp
+	mov #24 : snake_y
+	rts
+step_snake_left:
+step_snake_down:
+	inc $d021
+	rts

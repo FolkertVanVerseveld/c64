@@ -1,0 +1,45 @@
+#importonce
+
+//------------------------------------
+// Basic commands
+//------------------------------------
+.pseudocommand mov arg1:arg2 {
+	lda arg1
+	sta arg2
+}
+
+.pseudocommand mov16 src:tar {
+	lda src
+	sta tar
+	lda _16bit_nextArgument(src)
+	sta _16bit_nextArgument(tar)
+}
+
+.function _16bit_nextArgument(arg) {
+	.if (arg.getType()==AT_IMMEDIATE) .return CmdArgument(arg.getType(),>arg.getValue())
+	.return CmdArgument(arg.getType(),arg.getValue()+1)
+}
+
+//------------------------------------
+// Irq commands
+//------------------------------------
+.pseudocommand irq {
+	pha
+	txa
+	pha
+	tya
+	pha
+	mov #$ff : $d019
+}
+
+.pseudocommand qri line : addr {
+	.if (line.getType()!=AT_NONE) 	mov line : $d012
+	.if (addr.getType()!=AT_NONE) 	mov16 addr : $fffe
+	pla
+	tay
+	pla
+	tax
+	pla
+	rti
+}
+
