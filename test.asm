@@ -108,7 +108,6 @@ next_dot:
 	rts
 
 step:
-	// TODO change direction after some steps
 snake_step:
 	// setup snake movement code
 	ldx snake_dir
@@ -119,13 +118,6 @@ snake_step:
 !fptr:
 	jsr !hang+
 
-	// TODO check if snake needs to grow
-//	ldx snake_grow
-//!hang:
-//	beq !hang-
-//	dex
-//	stx snake_grow
-
 	// advance head
 	lda snake_dp
 	clc
@@ -134,6 +126,29 @@ snake_step:
 	lda snake_dp + 1
 	adc snake_pos + 1
 	sta snake_pos + 1
+
+	// head = (head + 1) % 32
+	lda snake_head
+	clc
+	adc #2
+	and #31
+	sta snake_head
+
+	// TODO check if snake needs to grow
+	ldx snake_grow
+	beq !no_grow+
+	dex
+	stx snake_grow
+!no_grow:
+
+//	ldx snake_grow
+//!hang:
+//	beq !hang-
+//	dex
+//	stx snake_grow
+	// TODO remove trailing tail stuff
+	// NOTE tail should not overlap with target! (target becomes invisible)
+	// TODO update tail
 
 	// update head
 	lda snake_pos
