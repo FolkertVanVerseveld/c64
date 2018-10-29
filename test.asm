@@ -76,6 +76,9 @@ snake_init:
 	mov16 dot_pos : snake_pos
 	// setup other snake stuff
 	mov #grow : snake_grow
+	lda #0
+	sta snake_head
+	sta snake_tail
 	// setup target
 	lda #$51
 	jsr next_dot
@@ -127,7 +130,7 @@ snake_step:
 	adc snake_pos + 1
 	sta snake_pos + 1
 
-	// head = (head + 1) % 32
+	// head = (head + 1) % 16
 	lda snake_head
 	clc
 	adc #2
@@ -138,8 +141,17 @@ snake_step:
 	ldx snake_grow
 	beq !no_grow+
 	dex
+	dec $d020
 	stx snake_grow
+	jmp !hold_tail+
 !no_grow:
+	// tail = (tail + 1) % 16
+	lda snake_tail
+	clc
+	adc #2
+	and #31
+	sta snake_tail
+!hold_tail:
 
 //	ldx snake_grow
 //!hang:
@@ -150,19 +162,24 @@ snake_step:
 	// NOTE tail should not overlap with target! (target becomes invisible)
 	// TODO update tail
 
-	// update head
+	// update head and store head in table
+	ldx snake_head
 	lda snake_pos
 	sta !fetch_head+ + 1
 	sta !put_head+ + 1
+	sta snakes_tbl, x
 	lda snake_pos + 1
 	sta !fetch_head+ + 2
 	sta !put_head+ + 2
+	sta snakes_tbl + 1, x
 !fetch_head:
 	lda $0400
-	cmp #$e0
-	beq !die+
 	cmp #$51
-	bne !move+
+	beq !next+
+	cmp #' '
+	bne !die+
+	jmp !move+
+!next:
 	lda #$51
 	jsr next_dot
 !move:
