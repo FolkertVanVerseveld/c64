@@ -10,13 +10,21 @@ BasicUpstart2(main)
 // TODO add music
 // TODO add loading sprites
 
+//.var music = LoadSid("/home/methos/Music/C64Music/MUSICIANS/0-9/20CC/van_Santen_Edwin/13_Seconds_of_Massacre.sid")
+.var music = LoadSid("/home/methos/Music/C64Music/MUSICIANS/0-9/20CC/van_Santen_Edwin/Blackmail_Tune_1.sid")
 //.var music = LoadSid("/home/methos/Music/C64Music/MUSICIANS/T/Tel_Jeroen/Fun_Fun.sid")
 //.var music = LoadSid("fallen_down_b.sid")
 
 #import "pseudo.lib"
 
 .var irq_line_top = $20
+
+.var vic = $0000
+.var screen = vic + $0400
+.var spr_data = vic + $2400
+
 .var tmp = $ff
+// snake vars
 .var grow = 4
 .var max_size = 32
 
@@ -45,23 +53,143 @@ BasicUpstart2(main)
 main:
 	jsr clear
 	jsr snake_init
-	//lda #0
-	//jsr music_init
+	lda #0
+	jsr music.init
+	jsr spr_init
 
 	// inline: setup irq
-		mov #$35 : $01
-		mov16 #irq_top : $fffe
-		mov #$1b : $d011
-		mov #irq_line_top : $d012
-		mov #$81 : $d01a
-		mov #$7f : $dc0d
-		mov #$7f : $dd0d
-		lda $dc0d
-		lda $dd0d
-		mov #$ff : $d019
-		cli
+	mov #$35 : $01
+	mov16 #irq_top : $fffe
+	mov #$1b : $d011
+	mov #irq_line_top : $d012
+	mov #$81 : $d01a
+	mov #$7f : $dc0d
+	mov #$7f : $dd0d
+	lda $dc0d
+	lda $dd0d
+	mov #$ff : $d019
+	cli
 
 	jmp *
+
+spr_init:
+	// TODO sprite logic
+	lda #(spr_data - vic + 64 * 0) / 64
+	sta screen + $03f8
+	lda #(spr_data - vic + 64 * 1) / 64
+	sta screen + $03f9
+	lda #(spr_data - vic + 64 * 2) / 64
+	sta screen + $03fa
+	lda #(spr_data - vic + 64 * 3) / 64
+	sta screen + $03fb
+	lda #(spr_data - vic + 64 * 4) / 64
+	sta screen + $03fc
+	// copy sprites
+	ldx #0
+!l:
+	lda m0spr, x
+	sta spr_data + 64 * 0, x
+	inx
+	cpx #64
+	bne !l-
+	ldx #0
+!l:
+	lda m1spr, x
+	sta spr_data + 64 * 1, x
+	inx
+	cpx #64
+	bne !l-
+!l:
+	lda m2spr, x
+	sta spr_data + 64 * 2, x
+	inx
+	cpx #64
+	bne !l-
+!l:
+	lda m3spr, x
+	sta spr_data + 64 * 3, x
+	inx
+	cpx #64
+	bne !l-
+!l:
+	lda m4spr, x
+	sta spr_data + 64 * 4, x
+	inx
+	cpx #64
+	bne !l-
+
+	// show sprites
+	lda #$1f
+	sta $d015
+	lda #$01
+	sta $d027
+	sta $d028
+	sta $d029
+	sta $d02a
+	sta $d02b
+
+	lda #$88 + 0 * 20
+	sta $d000
+	lda #$88 + 1 * 20
+	sta $d002
+	lda #$88 + 2 * 20
+	sta $d004
+	lda #$88 + 3 * 20
+	sta $d006
+	lda #$88 + 4 * 20
+	sta $d008
+	lda #$80
+	sta $d001
+	sta $d003
+	sta $d005
+	sta $d007
+	sta $d009
+
+	rts
+
+spr_step:
+	lda spr_count0
+	and #$3f
+	tax
+	lda sinus, x
+	sta $d001
+	inc spr_count0
+	lda spr_count1
+	and #$3f
+	tax
+	lda sinus, x
+	sta $d003
+	inc spr_count1
+	lda spr_count2
+	and #$3f
+	tax
+	lda sinus, x
+	sta $d005
+	inc spr_count2
+	lda spr_count3
+	and #$3f
+	tax
+	lda sinus, x
+	sta $d007
+	inc spr_count3
+	lda spr_count4
+	and #$3f
+	tax
+	lda sinus, x
+	sta $d009
+	inc spr_count4
+	rts
+
+spr_count0:
+	.byte 0
+spr_count1:
+	.byte 2
+spr_count2:
+	.byte 4
+spr_count3:
+	.byte 6
+spr_count4:
+	.byte 8
 
 // clear screen
 clear:
@@ -141,6 +269,7 @@ delay:
 	.byte 0
 
 step:
+	jsr spr_step
 // XXX uncomment this to slow down the game
 //	ldx delay
 //	beq snake_step
@@ -180,7 +309,6 @@ snake_step:
 !no_grow:
 	// erase old tail
 	ldx snake_tail
-	break()
 	lda snakes_tbl, x
 	sta !erase+ + 1
 	lda snakes_tbl + 1, x
@@ -285,9 +413,7 @@ irq_top:
 	irq
 	inc $d020
 	jsr step
-	//inc $d020
-	//jsr music_play
-	//dec $d020
+	jsr music.play
 	dec $d020
 	qri
 
@@ -422,12 +548,76 @@ snakes_tbl:
 	.word 0, 0, 0, 0, 0, 0, 0, 0
 	.word 0, 0, 0, 0, 0, 0, 0, 0
 
-//	* = music.location "music"
-//
-//	.fill music.size, music.getData(i)
-//
-//	.print "music_init = $" + toHexString(music.init)
-//	.print "music_play = $" + toHexString(music.play)
-//
-//	.label music_init = *
-//	.label music_play = * + 3
+.align $40
+m0spr:
+	.byte $00,$00,$00,$0e,$00,$00,$0e,$00
+	.byte $00,$0e,$00,$00,$0e,$00,$00,$0e
+	.byte $00,$00,$0e,$00,$00,$0e,$00,$00
+	.byte $0e,$00,$00,$0e,$00,$00,$0e,$00
+	.byte $00,$0e,$00,$00,$0e,$00,$00,$0e
+	.byte $00,$00,$0e,$00,$00,$0e,$00,$00
+	.byte $0e,$00,$00,$0f,$ff,$f8,$0f,$ff
+	.byte $f8,$0f,$ff,$f8,$00,$00,$00,$00
+
+//LDA #$08 // sprite multicolor 1
+//STA $D025
+//LDA #$06 // sprite multicolor 2
+//STA $D026
+
+
+// sprite 1 / singlecolor / color: $00
+.align $40
+m1spr:
+	.byte $00,$00,$00,$00,$7e,$00,$00,$ff
+	.byte $00,$01,$ff,$80,$03,$e7,$c0,$07
+	.byte $81,$e0,$07,$81,$e0,$0f,$81,$f0
+	.byte $0f,$00,$f0,$0f,$00,$f0,$0f,$ff
+	.byte $f0,$0f,$ff,$f0,$0f,$ff,$f0,$0f
+	.byte $00,$f0,$0f,$00,$f0,$0f,$00,$f0
+	.byte $0f,$00,$f0,$0f,$00,$f0,$0f,$00
+	.byte $f0,$0f,$00,$f0,$00,$00,$00,$00
+
+.align $40
+m2spr:
+	.byte $00,$00,$00,$0f,$fc,$00,$0f,$ff
+	.byte $00,$0f,$ff,$80,$0f,$07,$c0,$0f
+	.byte $01,$e0,$0f,$01,$e0,$0f,$01,$f0
+	.byte $0f,$00,$f0,$0f,$00,$f0,$0f,$00
+	.byte $f0,$0f,$00,$f0,$0f,$00,$f0,$0f
+	.byte $01,$f0,$0f,$01,$e0,$0f,$01,$e0
+	.byte $0f,$07,$c0,$0f,$ff,$80,$0f,$ff
+	.byte $00,$0f,$fc,$00,$00,$00,$00,$00
+
+.align $40
+m3spr:
+	.byte $00,$00,$00,$0f,$ff,$f0,$0f,$ff
+	.byte $f0,$0f,$ff,$f0,$0f,$00,$00,$0f
+	.byte $00,$00,$0f,$00,$00,$0f,$00,$00
+	.byte $0f,$00,$00,$0f,$ff,$c0,$0f,$ff
+	.byte $c0,$0f,$ff,$c0,$0f,$00,$00,$0f
+	.byte $00,$00,$0f,$00,$00,$0f,$00,$00
+	.byte $0f,$00,$00,$0f,$ff,$f0,$0f,$ff
+	.byte $f0,$0f,$ff,$f0,$00,$00,$00,$00
+.align $40
+m4spr:
+	.byte $00,$00,$00,$0f,$00,$f0,$0f,$80
+	.byte $f0,$0f,$80,$f0,$0f,$c0,$f0,$0f
+	.byte $c0,$f0,$0f,$e0,$f0,$0f,$60,$f0
+	.byte $0f,$70,$f0,$0f,$30,$f0,$0f,$38
+	.byte $f0,$0f,$18,$f0,$0f,$1c,$f0,$0f
+	.byte $0c,$f0,$0f,$0e,$f0,$0f,$06,$f0
+	.byte $0f,$07,$f0,$0f,$03,$f0,$0f,$03
+	.byte $f0,$0f,$01,$f0,$00,$00,$00,$00
+
+.align $40
+
+sinus:
+	.fill $40, round($80 + $08 * sin(toRadians(i * 360 / $40)))
+
+// MUSIC
+	* = music.location "music"
+
+	.fill music.size, music.getData(i)
+
+	.print "music_init = $" + toHexString(music.init)
+	.print "music_play = $" + toHexString(music.play)
