@@ -11,7 +11,7 @@ BasicUpstart2(main)
 
 .var irq_line_top = $20
 .var tmp = $ff
-.var grow = 4
+.var grow = 28
 
 // characters:
 //
@@ -40,8 +40,8 @@ main:
 	jsr snake_init
 
 	// inline: setup irq
-		mov #$35 : $01            // <- Notice how different addressing modes can be used
-		mov16 #irq_top : $fffe		  // <- 16 bit commands (or higher) can also be made
+		mov #$35 : $01
+		mov16 #irq_top : $fffe
 		mov #$1b : $d011
 		mov #irq_line_top : $d012
 		mov #$81 : $d01a
@@ -68,7 +68,7 @@ clear:
 	rts
 
 snake_init:
-	lda #$e0
+	lda #' '
 	jsr next_dot
 	// remember our position
 	mov dot_y : snake_y
@@ -110,8 +110,17 @@ next_dot:
 	sta dot_index
 	rts
 
+delay:
+	.byte 0
+
 step:
+// XXX uncomment this to slow down the game
+//	ldx delay
+//	beq snake_step
+//	dec delay
+//	rts
 snake_step:
+	mov #4 : delay
 	// setup snake movement code
 	ldx snake_dir
 	lda fptr_snake, x
@@ -121,7 +130,7 @@ snake_step:
 !fptr:
 	jsr !hang+
 
-	// advance head
+	// compute new head screen location
 	lda snake_dp
 	clc
 	adc snake_pos
@@ -130,35 +139,33 @@ snake_step:
 	adc snake_pos + 1
 	sta snake_pos + 1
 
-	// head = (head + 1) % 16
-	lda snake_head
-	clc
-	adc #2
-	and #31
-	sta snake_head
-
-	// TODO check if snake needs to grow
+	// grow code
 	ldx snake_grow
 	beq !no_grow+
 	dex
-	dec $d020
+	//dec $d020
 	stx snake_grow
 	jmp !hold_tail+
 !no_grow:
-	// tail = (tail + 1) % 16
+	// erase old tail
+	ldx snake_tail
+	break()
+	lda snakes_tbl, x
+	sta !erase+ + 1
+	lda snakes_tbl + 1, x
+	sta !erase+ + 2
+	lda #' '
+!erase:
+	sta $0400
+	// tail = (tail + 1) % 32
 	lda snake_tail
 	clc
 	adc #2
-	and #31
+	and #63
 	sta snake_tail
 !hold_tail:
-
-//	ldx snake_grow
-//!hang:
-//	beq !hang-
-//	dex
-//	stx snake_grow
 	// TODO remove trailing tail stuff
+	// FIXME tail not moved properly
 	// NOTE tail should not overlap with target! (target becomes invisible)
 	// TODO update tail
 
@@ -172,6 +179,14 @@ snake_step:
 	sta !fetch_head+ + 2
 	sta !put_head+ + 2
 	sta snakes_tbl + 1, x
+
+	// head = (head + 1) % 32
+	lda snake_head
+	clc
+	adc #2
+	and #63
+	sta snake_head
+
 !fetch_head:
 	lda $0400
 	cmp #$51
@@ -189,7 +204,29 @@ snake_step:
 !hang:
 	rts
 !die:
-	jsr clear
+	//jsr clear
+	ldx #0
+	ldy #' '
+!l:
+	lda snakes_tbl, x
+	sta !erase+ + 1
+	lda snakes_tbl + 1, x
+	sta !erase+ + 2
+!erase:
+	sty $0400
+	inx
+	inx
+	cpx #$40
+	bne !l-
+
+	lda dot_pos
+	sta !erase+ + 1
+	lda dot_pos + 1
+	sta !erase+ + 2
+	lda #' '
+!erase:
+	sta $0400
+
 	jsr snake_init
 	rts
 
@@ -340,8 +377,10 @@ dots_x:
 fptr_snake:
 	.word step_snake_right, step_snake_up, step_snake_left, step_snake_down
 
-.align $20
+.align $40
 
 snakes_tbl:
+	.word 0, 0, 0, 0, 0, 0, 0, 0
+	.word 0, 0, 0, 0, 0, 0, 0, 0
 	.word 0, 0, 0, 0, 0, 0, 0, 0
 	.word 0, 0, 0, 0, 0, 0, 0, 0
