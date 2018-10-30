@@ -7,9 +7,6 @@ BasicUpstart2(main)
 .eval brkFile.writeln("break " + toHexString(*))
 }
 
-// TODO add music
-// TODO add loading sprites
-
 //.var music = LoadSid("/home/methos/Music/C64Music/MUSICIANS/0-9/20CC/van_Santen_Edwin/13_Seconds_of_Massacre.sid")
 .var music = LoadSid("/home/methos/Music/C64Music/MUSICIANS/0-9/20CC/van_Santen_Edwin/Blackmail_Tune_1.sid")
 //.var music = LoadSid("/home/methos/Music/C64Music/MUSICIANS/T/Tel_Jeroen/Fun_Fun.sid")
@@ -22,6 +19,8 @@ BasicUpstart2(main)
 .var vic = $0000
 .var screen = vic + $0400
 .var spr_data = vic + $2400
+
+.var col_delay = 4
 
 .var tmp = $ff
 // snake vars
@@ -73,7 +72,7 @@ main:
 	jmp *
 
 spr_init:
-	// TODO sprite logic
+	// sprite logic
 	lda #(spr_data - vic + 64 * 0) / 64
 	sta screen + $03f8
 	lda #(spr_data - vic + 64 * 1) / 64
@@ -123,9 +122,13 @@ spr_init:
 	sta $d015
 	lda #$01
 	sta $d027
+	lda #$03
 	sta $d028
+	lda #$0f
 	sta $d029
+	lda #$09
 	sta $d02a
+	lda #$0b
 	sta $d02b
 
 	lda #$88 + 0 * 20
@@ -178,7 +181,28 @@ spr_step:
 	lda sinus, x
 	sta $d009
 	inc spr_count4
+
+	lda spr_delay
+	beq !change+
+	dec spr_delay
 	rts
+
+!change:
+	mov #col_delay : spr_delay
+	inc $d027
+	inc $d027
+	inc $d028
+	inc $d028
+	inc $d029
+	inc $d029
+	inc $d02a
+	inc $d02a
+	inc $d02b
+	inc $d02b
+	rts
+
+spr_delay:
+	.byte 4
 
 spr_count0:
 	.byte 0
@@ -411,10 +435,10 @@ snake_dp:
 
 irq_top:
 	irq
-	inc $d020
+	//inc $d020
 	jsr step
 	jsr music.play
-	dec $d020
+	//dec $d020
 	qri
 
 step_snake_right:
@@ -559,13 +583,7 @@ m0spr:
 	.byte $0e,$00,$00,$0f,$ff,$f8,$0f,$ff
 	.byte $f8,$0f,$ff,$f8,$00,$00,$00,$00
 
-//LDA #$08 // sprite multicolor 1
-//STA $D025
-//LDA #$06 // sprite multicolor 2
-//STA $D026
 
-
-// sprite 1 / singlecolor / color: $00
 .align $40
 m1spr:
 	.byte $00,$00,$00,$00,$7e,$00,$00,$ff
