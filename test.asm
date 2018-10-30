@@ -7,11 +7,18 @@ BasicUpstart2(main)
 .eval brkFile.writeln("break " + toHexString(*))
 }
 
+// TODO add music
+// TODO add loading sprites
+
+//.var music = LoadSid("/home/methos/Music/C64Music/MUSICIANS/T/Tel_Jeroen/Fun_Fun.sid")
+//.var music = LoadSid("fallen_down_b.sid")
+
 #import "pseudo.lib"
 
 .var irq_line_top = $20
 .var tmp = $ff
-.var grow = 28
+.var grow = 4
+.var max_size = 32
 
 // characters:
 //
@@ -38,6 +45,8 @@ BasicUpstart2(main)
 main:
 	jsr clear
 	jsr snake_init
+	//lda #0
+	//jsr music_init
 
 	// inline: setup irq
 		mov #$35 : $01
@@ -65,6 +74,23 @@ clear:
 	sta $06e8, x
 	inx
 	bne !l-
+
+	lda #0
+	sta $d020
+	// green: 5
+	// light green: 13
+	sta $d021
+
+	lda #5
+	ldx #0
+!l:
+	sta $d800, x
+	sta $d900, x
+	sta $da00, x
+	sta $dae8, x
+	inx
+	bne !l-
+
 	rts
 
 snake_init:
@@ -79,6 +105,7 @@ snake_init:
 	lda #0
 	sta snake_head
 	sta snake_tail
+	sta snake_size
 	// setup target
 	lda #$51
 	jsr next_dot
@@ -140,11 +167,15 @@ snake_step:
 	sta snake_pos + 1
 
 	// grow code
+	lda snake_size
+	cmp #max_size
+	beq !no_grow+
 	ldx snake_grow
 	beq !no_grow+
 	dex
 	//dec $d020
 	stx snake_grow
+	inc snake_size
 	jmp !hold_tail+
 !no_grow:
 	// erase old tail
@@ -164,10 +195,7 @@ snake_step:
 	and #63
 	sta snake_tail
 !hold_tail:
-	// TODO remove trailing tail stuff
-	// FIXME tail not moved properly
 	// NOTE tail should not overlap with target! (target becomes invisible)
-	// TODO update tail
 
 	// update head and store head in table
 	ldx snake_head
@@ -195,6 +223,7 @@ snake_step:
 	bne !die+
 	jmp !move+
 !next:
+	inc snake_grow
 	lda #$51
 	jsr next_dot
 !move:
@@ -204,7 +233,8 @@ snake_step:
 !hang:
 	rts
 !die:
-	//jsr clear
+	// reset screen state
+	// remove snake
 	ldx #0
 	ldy #' '
 !l:
@@ -219,6 +249,7 @@ snake_step:
 	cpx #$40
 	bne !l-
 
+	// remove target
 	lda dot_pos
 	sta !erase+ + 1
 	lda dot_pos + 1
@@ -227,6 +258,7 @@ snake_step:
 !erase:
 	sta $0400
 
+	// reset snake state
 	jsr snake_init
 	rts
 
@@ -253,6 +285,9 @@ irq_top:
 	irq
 	inc $d020
 	jsr step
+	//inc $d020
+	//jsr music_play
+	//dec $d020
 	dec $d020
 	qri
 
@@ -360,6 +395,8 @@ snake_tail:
 	.byte 0
 snake_grow:
 	.byte 0
+snake_size:
+	.byte 0
 
 .align $80
 
@@ -384,3 +421,13 @@ snakes_tbl:
 	.word 0, 0, 0, 0, 0, 0, 0, 0
 	.word 0, 0, 0, 0, 0, 0, 0, 0
 	.word 0, 0, 0, 0, 0, 0, 0, 0
+
+//	* = music.location "music"
+//
+//	.fill music.size, music.getData(i)
+//
+//	.print "music_init = $" + toHexString(music.init)
+//	.print "music_play = $" + toHexString(music.play)
+//
+//	.label music_init = *
+//	.label music_play = * + 3
