@@ -83,6 +83,10 @@ spr_init:
 	sta screen + $03fb
 	lda #(spr_data - vic + 64 * 4) / 64
 	sta screen + $03fc
+	lda #(spr_data - vic + 64 * 5) / 64
+	sta screen + $03fd
+	lda #(spr_data - vic + 64 * 6) / 64
+	sta screen + $03fe
 	// copy sprites
 	ldx #0
 !l:
@@ -116,9 +120,21 @@ spr_init:
 	inx
 	cpx #64
 	bne !l-
+!l:
+	lda m5spr, x
+	sta spr_data + 64 * 5, x
+	inx
+	cpx #64
+	bne !l-
+!l:
+	lda m6spr, x
+	sta spr_data + 64 * 6, x
+	inx
+	cpx #64
+	bne !l-
 
 	// show sprites
-	lda #$1f
+	lda #$7f
 	sta $d015
 	lda #$01
 	sta $d027
@@ -130,23 +146,33 @@ spr_init:
 	sta $d02a
 	lda #$0b
 	sta $d02b
+	lda #$05
+	sta $d02c
+	lda #$0d
+	sta $d02e
 
-	lda #$88 + 0 * 20
+	lda #$88 + -1 * 20
 	sta $d000
-	lda #$88 + 1 * 20
+	lda #$88 + 0 * 20
 	sta $d002
-	lda #$88 + 2 * 20
+	lda #$88 + 1 * 20
 	sta $d004
-	lda #$88 + 3 * 20
+	lda #$88 + 2 * 20
 	sta $d006
-	lda #$88 + 4 * 20
+	lda #$88 + 3 * 20
 	sta $d008
+	lda #$88 + 4 * 20
+	sta $d00a
+	lda #$88 + 5 * 20
+	sta $d00c
 	lda #$80
 	sta $d001
 	sta $d003
 	sta $d005
 	sta $d007
 	sta $d009
+	sta $d00b
+	sta $d00d
 
 	rts
 
@@ -181,6 +207,18 @@ spr_step:
 	lda sinus, x
 	sta $d009
 	inc spr_count4
+	lda spr_count5
+	and #$3f
+	tax
+	lda sinus, x
+	sta $d00b
+	inc spr_count5
+	lda spr_count6
+	and #$3f
+	tax
+	lda sinus, x
+	sta $d00d
+	inc spr_count6
 
 	lda spr_delay
 	beq !change+
@@ -199,6 +237,10 @@ spr_step:
 	inc $d02a
 	inc $d02b
 	inc $d02b
+	inc $d02c
+	inc $d02c
+	inc $d02d
+	inc $d02d
 	rts
 
 spr_delay:
@@ -214,6 +256,10 @@ spr_count3:
 	.byte 6
 spr_count4:
 	.byte 8
+spr_count5:
+	.byte 10
+spr_count6:
+	.byte 12
 
 // clear screen
 clear:
@@ -574,18 +620,29 @@ snakes_tbl:
 
 .align $40
 m0spr:
-	.byte $00,$00,$00,$0e,$00,$00,$0e,$00
-	.byte $00,$0e,$00,$00,$0e,$00,$00,$0e
-	.byte $00,$00,$0e,$00,$00,$0e,$00,$00
-	.byte $0e,$00,$00,$0e,$00,$00,$0e,$00
-	.byte $00,$0e,$00,$00,$0e,$00,$00,$0e
-	.byte $00,$00,$0e,$00,$00,$0e,$00,$00
-	.byte $0e,$00,$00,$0f,$ff,$f8,$0f,$ff
+	.byte $00,$00,$00,$0f,$00,$00,$0f,$00
+	.byte $00,$0f,$00,$00,$0f,$00,$00,$0f
+	.byte $00,$00,$0f,$00,$00,$0f,$00,$00
+	.byte $0f,$00,$00,$0f,$00,$00,$0f,$00
+	.byte $00,$0f,$00,$00,$0f,$00,$00,$0f
+	.byte $00,$00,$0f,$00,$00,$0f,$00,$00
+	.byte $0f,$00,$00,$0f,$ff,$f8,$0f,$ff
 	.byte $f8,$0f,$ff,$f8,$00,$00,$00,$00
 
 
 .align $40
 m1spr:
+	.byte $00,$00,$00,$00,$7e,$00,$01,$ff
+	.byte $80,$03,$ff,$c0,$07,$ff,$e0,$07
+	.byte $c3,$e0,$07,$81,$e0,$0f,$81,$f0
+	.byte $0f,$81,$f0,$0f,$00,$f0,$0f,$00
+	.byte $f0,$0f,$00,$f0,$0f,$81,$f0,$0f
+	.byte $81,$f0,$07,$81,$e0,$07,$c3,$e0
+	.byte $07,$ff,$e0,$03,$ff,$c0,$01,$ff
+	.byte $80,$00,$7e,$00,$00,$00,$00,$00
+
+.align $40
+m2spr:
 	.byte $00,$00,$00,$00,$7e,$00,$00,$ff
 	.byte $00,$01,$ff,$80,$03,$e7,$c0,$07
 	.byte $81,$e0,$07,$81,$e0,$0f,$81,$f0
@@ -596,7 +653,7 @@ m1spr:
 	.byte $f0,$0f,$00,$f0,$00,$00,$00,$00
 
 .align $40
-m2spr:
+m3spr:
 	.byte $00,$00,$00,$0f,$fc,$00,$0f,$ff
 	.byte $00,$0f,$ff,$80,$0f,$07,$c0,$0f
 	.byte $01,$e0,$0f,$01,$e0,$0f,$01,$f0
@@ -607,25 +664,37 @@ m2spr:
 	.byte $00,$0f,$fc,$00,$00,$00,$00,$00
 
 .align $40
-m3spr:
-	.byte $00,$00,$00,$0f,$ff,$f0,$0f,$ff
-	.byte $f0,$0f,$ff,$f0,$0f,$00,$00,$0f
-	.byte $00,$00,$0f,$00,$00,$0f,$00,$00
-	.byte $0f,$00,$00,$0f,$ff,$c0,$0f,$ff
-	.byte $c0,$0f,$ff,$c0,$0f,$00,$00,$0f
-	.byte $00,$00,$0f,$00,$00,$0f,$00,$00
-	.byte $0f,$00,$00,$0f,$ff,$f0,$0f,$ff
-	.byte $f0,$0f,$ff,$f0,$00,$00,$00,$00
-.align $40
 m4spr:
-	.byte $00,$00,$00,$0f,$00,$f0,$0f,$80
-	.byte $f0,$0f,$80,$f0,$0f,$c0,$f0,$0f
-	.byte $c0,$f0,$0f,$e0,$f0,$0f,$60,$f0
-	.byte $0f,$70,$f0,$0f,$30,$f0,$0f,$38
-	.byte $f0,$0f,$18,$f0,$0f,$1c,$f0,$0f
-	.byte $0c,$f0,$0f,$0e,$f0,$0f,$06,$f0
+	.byte $00,$00,$00,$0f,$ff,$e0,$0f,$ff
+	.byte $e0,$0f,$ff,$e0,$00,$7c,$00,$00
+	.byte $7c,$00,$00,$7c,$00,$00,$7c,$00
+	.byte $00,$7c,$00,$00,$7c,$00,$00,$7c
+	.byte $00,$00,$7c,$00,$00,$7c,$00,$00
+	.byte $7c,$00,$00,$7c,$00,$00,$7c,$00
+	.byte $00,$7c,$00,$0f,$ff,$e0,$0f,$ff
+	.byte $e0,$0f,$ff,$e0,$00,$00,$00,$00
+
+.align $40
+m5spr:
+	.byte $00,$00,$00,$0f,$80,$f0,$0f,$80
+	.byte $f0,$0f,$c0,$f0,$0f,$c0,$f0,$0f
+	.byte $e0,$f0,$0f,$e0,$f0,$0f,$70,$f0
+	.byte $0f,$70,$f0,$0f,$38,$f0,$0f,$38
+	.byte $f0,$0f,$1c,$f0,$0f,$1c,$f0,$0f
+	.byte $0e,$f0,$0f,$0e,$f0,$0f,$07,$f0
 	.byte $0f,$07,$f0,$0f,$03,$f0,$0f,$03
 	.byte $f0,$0f,$01,$f0,$00,$00,$00,$00
+
+.align $40
+m6spr:
+	.byte $00,$00,$00,$00,$7f,$80,$01,$ff
+	.byte $80,$03,$ff,$80,$07,$ff,$80,$07
+	.byte $c0,$00,$07,$80,$00,$0f,$80,$00
+	.byte $0f,$80,$00,$0f,$1f,$c0,$0f,$1f
+	.byte $e0,$0f,$1f,$e0,$0f,$81,$e0,$0f
+	.byte $81,$e0,$07,$81,$e0,$07,$c3,$e0
+	.byte $07,$ff,$e0,$03,$ff,$c0,$01,$ff
+	.byte $80,$00,$7e,$00,$00,$00,$00,$00
 
 .align $40
 
