@@ -24,12 +24,12 @@
 // Irq commands
 //------------------------------------
 .pseudocommand irq {
-	pha
-	txa
-	pha
-	tya
-	pha
-	mov #$ff : $d019
+	pha // 3, 3
+	txa // 2, 5
+	pha // 3, 8
+	tya // 2, 10
+	pha // 3, 13
+	mov #$ff : $d019 // 8, 21
 }
 
 .pseudocommand qri line : addr {
