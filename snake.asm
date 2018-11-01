@@ -57,6 +57,7 @@ main:
 	jsr spr_init
 
 	// inline: setup irq
+	sei
 	mov #$35 : $01
 	mov16 #irq_top : $fffe
 	mov #$1b : $d011

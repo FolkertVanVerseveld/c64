@@ -43,3 +43,24 @@
 	rti
 }
 
+.pseudocommand qri2 line : addr {
+	mov line : $d012
+
+	.if (line.getValue() > 255) {
+		lda $d011
+		ora #$80
+		sta $d011
+	} else {
+		lda $d011
+		and #$7f
+		sta $d011
+	}
+
+	mov16 addr : $fffe
+	pla
+	tay
+	pla
+	tax
+	pla
+	rti
+}
