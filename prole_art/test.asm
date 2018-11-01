@@ -97,9 +97,6 @@ irq_top:
 	jmp !irq_change_once+
 !done:
 	qri #irq_line_screen_start : #irq_screen_top
-!done2:
-	inc $0400
-	jmp !done+
 
 scroll_top_size:
 	.byte 1
@@ -145,12 +142,7 @@ irq_screen_top:
 	sta $d020
 	jmp !done+
 !no_inc:
-	lda #$4c
-	sta !fptr-
-	lda #<!done2-
-	sta !fptr + 1
-	lda #>!done2-
-	sta !fptr + 2
+	inc $0400
 	inc wobble_pos
 !done:
 	qri2 #irq_line_bottom : #irq_bottom
