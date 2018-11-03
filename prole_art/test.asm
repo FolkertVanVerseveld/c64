@@ -8,13 +8,12 @@ BasicUpstart2(main)
 //
 // 50 is net iets voor het begin van 25 rijenscherm
 
-
-.var irq_line_top = (312 - 284) / 2
-
-.var irq_line_screen_start = 49
-//.var irq_line_top = $20
-
-.var irq_line_bottom = 284 + 5
+//.var irq_line_top = 50
+//.var irq_line_middle = 50 + 12 * 8
+//.var irq_line_bottom = 50 + 25 * 8
+.var irq_line_top = 0 * 103
+.var irq_line_middle = 1 * 103 + 24
+.var irq_line_bottom = 2 * 103 - 24
 
 // intro idea:
 
@@ -33,14 +32,9 @@ BasicUpstart2(main)
 // swedish flag
 // twister like effect?
 
-// or methos and anton names with sprites/petscii with flag colors
-
 .var music = LoadSid("/home/methos/Music/C64Music/MUSICIANS/0-9/20CC/van_Santen_Edwin/Blackmail_Tune_1.sid")
 
 main:
-	//lda #0
-	//sta $0400
-
 	lda #0
 	jsr music.init
 
@@ -58,117 +52,46 @@ main:
 	mov #$ff : $d019
 	cli
 
+	lda #$e0
+	ldx #7
+
+	.for (var y = 0; y < 24; y++) {
+		.for (var x = 12; x < 12 + 7; x++) {
+			sta $0400 + y * 40 + x
+			stx $d800 + y * 40 + x
+		}
+	}
+
 	jmp *
 
 irq_top:
-	irq // 21, 21
-
-	lda #6 // 4, 25
-	sta $d020 // 4, 29
-
-!fptr:
-	ldx scroll_top_size // 4, 33
-!l:
-	jsr delay2 // 14, 14
-	jsr delay2 // 14, 28
-	jsr delay2 // 14, 42
-	jsr delay2 // 14, 56
-	jmp !next+
-!next:
-	dex // 2, 61
-	bne !l-
-
-	lda #14
-	sta $d020
-
-	ldx scroll_top_size
-	cpx #$24
-	beq !no_inc+
-	inx
-	stx scroll_top_size
-	qri2 #irq_line_bottom : #irq_bottom
-!no_inc:
-	lda #$4c
-	sta !fptr-
-	lda #<!done+
-	sta !fptr- + 1
-	lda #>!done+
-	sta !fptr- + 2
-	jmp !irq_change_once+
-!done:
-	qri #irq_line_screen_start : #irq_screen_top
-
-scroll_top_size:
-	.byte 1
-
-irq_screen_top:
 	irq
+	mov #6 : $d020
+	sta $d021
+	jsr music.play
+	qri2 #irq_line_middle : #irq_middle
 
-!irq_change_once:
-	jsr delay
-	jsr delay
+irq_middle:
+	irq
+	jsr !delay+
+	jsr !delay+
 	bit $ea
-
-	lda #6
-	sta $d020
-
-	ldx wobble_size
-	ldy wobble_pos
-!l:
-	lda wobble_tbl, y
-	sta $d016
-	jsr delay2
-	jsr delay2
-	jsr delay2
-	nop
-	iny
-	tya
-	and #$1f
-	tay
-	dex
-	bne !l-
-
-	ldx wobble_size
-	cpx #$d7
-	beq !no_inc+
-	inx
-	stx wobble_size
-	inc wobble_pos
-
-	lda #$c8
-	sta $d016
-
-	lda #14
-	sta $d020
-	jmp !done+
-!no_inc:
-	inc $0400
-	inc wobble_pos
-!done:
+	mov #7 : $d020
+	sta $d021
 	qri2 #irq_line_bottom : #irq_bottom
+
 
 irq_bottom:
 	irq
-	jsr music.play
+	jsr !delay+
+	jsr !delay+
+	bit $ea
+	mov #6 : $d020
+	sta $d021
 	qri2 #irq_line_top : #irq_top
 
-delay2:
-	nop
-delay:
+!delay:
 	rts
-
-wobble_size:
-	.byte 2
-wobble_pos:
-	.byte 0
-
-.align $10
-
-wobble_tbl:
-	.fill $20, round($c8 + 3 + 3 * sin(toRadians(i * 360 / $20)))
-
-	.byte $c8, $c9, $ca, $cb, $cc, $cd, $ce, $cf
-	.byte $cf, $ce, $cd, $cc, $cb, $ca, $c9, $c8
 
 // MUSIC
 	* = music.location "music"

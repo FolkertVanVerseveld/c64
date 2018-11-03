@@ -14,12 +14,13 @@ while :; do
 			break
 		fi
 	done
-	if [ $emu == no ]; then
-		python ../sock.py p test.prg 172.28.1.105
+	#if [ $emu == no ]; then
+		#python ../sock.py p test.prg 172.28.1.105
+		python ../sock.py p test.prg 192.168.2.64
 		if [ $? -eq 0 ]; then
 			continue
 		fi
-	fi
+	#fi
 
 	#x64 -moncommands breakpoints.txt test.prg &
 	#xxd test.prg
