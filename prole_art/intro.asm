@@ -2,9 +2,7 @@
 
 BasicUpstart2(main)
 
-.var irq_line_top = $19 - 1
-
-.var top_lines = $19
+.var irq_line_top = $28 - 1
 
 .var irq_line_bottom = 312 - 64
 
@@ -96,21 +94,44 @@ irq_top_wedge:
 	beq *+2			// Stable raster line after this instruction.
 
 	ldx #0
-!l:
 	lda raster_tbl,x	// 5, 5
 	sta $d020		// 4, 9
 
 	jsr delay2		// 6+6+6+6, 33
-	jsr delay		// 6+6, 45
-	inc dummy		// 6, 51
-	bit $ea			// 3, 54
-	bit $ea			// 3, 54
-	inx			// 3, 59
-	cpx #top_lines		// 4, 63
-	bne !l-			// 4, 67
+	jsr delay2		// 6+6+6+6, 57
+	nop			// 2, 59
+	nop			// 2, 61
+	inx			// 2, 63
 
-	lda #14
-	sta $d020
+	lda raster_tbl,x	// 5, 5
+	sta $d020		// 4, 9
+
+	jsr delay2		// 6+6+6+6, 33
+	jsr delay2		// 6+6+6+6, 57
+	nop			// 2, 59
+	nop			// 2, 61
+	inx			// 2, 63
+
+	lda raster_tbl,x	// 5, 59
+	sta $d020		// 4, 63
+
+	jsr delay2		// 6+6+6+6, 33
+	jsr delay2		// 6+6+6+6, 57
+	nop			// 2, 59
+	nop			// 2, 61
+	inx			// 2, 63
+
+	lda raster_tbl,x	// 5, 59
+	sta $d020		// 4, 63
+
+	jsr delay2		// 6+6+6+6, 33
+	jsr delay2		// 6+6+6+6, 57
+	nop			// 2, 59
+	nop			// 2, 61
+	inx			// 2, 63
+
+	lda raster_tbl,x	// 5, 59
+	sta $d020		// 4, 63
 
 	lda #<irq_bottom	// Restore first IRQ for stable raster
 	sta $fffe
@@ -162,14 +183,7 @@ irq_bottom:
 
 
 raster_tbl:
-	.for (var i=0; i<top_lines; i++) {
-		.byte i
-	}
-dummy:
-	.byte 0
-
-top_counter:
-	.byte 0
+	.byte 7, 3, 12, 9, 0, 4, 13, 5, 1, 8
 
 // MUSIC
 	* = music.location "music"

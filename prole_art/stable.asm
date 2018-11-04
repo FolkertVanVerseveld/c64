@@ -35,7 +35,7 @@ start:
 	lda #irq_line_top
 	sta $d012
 
-	lda #$01		// Enable mask (XXX why $81? $1 should work?)
+	lda #$01		// Enable mask
 	sta $d01a		// IRQ interrupt ON
 
 	lda #%01111111		// Load interrupt control CIA 1:
