@@ -2,8 +2,9 @@
 
 BasicUpstart2(main)
 
-.var irq_line_top = $19 - 1
-.var top_lines = $19
+.var irq_line_top = $10 - 1
+//.var top_lines = $21
+.var top_lines = $21
 
 //.var irq_line_top = $20 - 1
 //.var top_lines = $08
@@ -13,6 +14,15 @@ BasicUpstart2(main)
 .var music = LoadSid("/home/methos/Music/C64Music/MUSICIANS/0-9/20CC/van_Santen_Edwin/Blackmail_Tune_1.sid")
 
 main:
+	// fill first row to see if wobble effect is correctly implemented
+	ldx #$00
+	lda #1
+!l:
+	sta $0400,x
+	inx
+	cpx #40
+	bne !l-
+
 	lda #0
 	jsr music.init
 
@@ -97,7 +107,6 @@ irq_top_wedge:
 	cmp $d012
 	beq *+2			// Stable raster line after this instruction.
 
-
 	ldx #0
 !l:
 	lda raster_tbl,x	// 4, 4
@@ -107,14 +116,20 @@ irq_top_wedge:
 	jsr delay		// 6+6, 44
 	inc dummy		// 6, 50
 	nop
-	nop
+	ldy #14
 	inx			// 2, 56
 	cpx top_counter		// 4, 60
 	bne !l-			// 3, 63
 
-	lda #14
-	sta $d020
+	// check if wobble logic should run
 
+	cpx #top_lines		// 2, 2
+	beq !no_inc+		// 2/3, 4/5
+
+	sty $d020
+	inc top_counter
+
+!done:
 	lda #<irq_bottom	// Restore first IRQ for stable raster
 	sta $fffe
 	lda #>irq_bottom
@@ -125,18 +140,96 @@ irq_top_wedge:
 
 	inc $d019		// Finally, acknowledge IRQ
 
-	ldx top_counter
-	cpx #top_lines
-	beq !no_inc+
-	inc top_counter
-!no_inc:
-
 	pla
 	tay
 	pla
 	tax
 	pla
 	rti
+
+	// raster line: irq_line_top + 1 + top_lines == 49
+!no_inc:
+	// spent cycles from last check: 5
+
+	// 49: NORMAL LINE
+	ldx wobble_pos		// 2, 7
+
+	jsr delay2		// 24, 31
+	jsr delay		// 12, 43
+
+	lda wobble_tbl, x	// 4, 47
+	sta $d016		// 4, 51
+
+	txa			// 2, 53
+	inx			// 2, 55
+	and #$20		// 2, 57
+	tax			// 2, 59
+
+	nop
+	nop
+
+	// 50: NORMAL LINE
+
+	jsr delay2		// 24, 32
+	jsr delay		// 12, 44
+
+	lda wobble_tbl, x	// 4, 4
+	sta $d016		// 4, 8
+
+	lda #7
+	sta $d020
+
+	txa
+	inx
+	and #$20
+	tax			// 2, 58
+	bit $ea
+	nop
+
+	// 51: BAD LINE
+	lda wobble_tbl, x	// 4, 4
+	sta $d016		// 4, 8
+	txa			// 2, 10
+	inx			// 2, 12
+	and #$20		// 2, 14
+	tax			// 2, 16
+	nop
+	nop
+
+	lda #$c8
+	sta $d016
+
+	lda #14
+	sta $d020
+
+	// increment wobble position
+	ldx wobble_pos
+	inx
+	cpx #$20
+	bne !l+
+	ldx #0
+!l:
+	stx wobble_pos
+
+	jmp !done-
+
+	ldx wobble_pos
+	ldy #2 * 8
+
+!l:
+	lda wobble_tbl, x
+	sta $d016
+
+	jsr delay2		// 6+6+6+6, 29
+	jsr delay2		// 6+6+6+6, 53
+
+	inx
+
+	dey
+	bne !l-
+
+	lda #$c8
+	sta $d016
 
 delay2:
 	jsr delay
@@ -150,8 +243,10 @@ irq_bottom:
 	tya
 	pha
 
+fetch_irq_top_lo:
 	lda #<irq_top
 	sta $fffe
+fetch_irq_top_hi:
 	lda #>irq_top
 	sta $ffff
 
@@ -160,7 +255,7 @@ irq_bottom:
 
 	inc $d019
 
-	jsr music.play
+	//jsr music.play
 
 	pla
 	tay
@@ -172,6 +267,7 @@ irq_bottom:
 
 raster_tbl:
 	.for (var i=0; i<top_lines; i++) {
+		//.byte i + 2
 		.byte 6
 	}
 dummy:
@@ -179,6 +275,15 @@ dummy:
 
 top_counter:
 	.byte 1
+middle_counter:
+	.byte 0
+
+.align $20
+
+wobble_tbl:
+	.fill $20, round($c8 + 3 + 3 * sin(toRadians(i * 360 / $20)))
+wobble_pos:
+	.byte 0
 
 // MUSIC
 	* = music.location "music"
