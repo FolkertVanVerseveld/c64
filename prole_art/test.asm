@@ -72,40 +72,48 @@ main:
 	jmp *
 
 .align $100
+	// Use double IRQ for stable raster.
+	// We have spent at least 7 cycles for invoking this IRQ and we may
+	// have up to 7 cycles jitter.
 irq_top:
-	pha
-	txa
-	pha
-	tya
-	pha
+	// 0, 14
+	pha			// 3, 10-17
+	txa			// 2, 12-19
+	pha			// 3, 15-22
+	tya			// 2, 17-24
+	pha			// 3, 20-27
 
-	lda #<irq_top_wedge	// Daisy chain double IRQ for stable raster
-	sta $fffe
-	lda #>irq_top_wedge
-	sta $ffff
+	lda #<irq_top_wedge	// 2, 22-29 Daisy chain double IRQ for stable raster
+	sta $fffe		// 4, 26-33
+	lda #>irq_top_wedge	// 2, 28-35
+	sta $ffff		// 4, 32-39
 
-	inc $d012		// Trigger wedge IRQ on next line.
+	inc $d012		// 6, 38-45 Trigger wedge IRQ on next line.
 
-	lda #$01		// Acknowledge IRQ
-	sta $d019
+	lda #$01		// 2, 40-47 Acknowledge IRQ
+	sta $d019		// 4, 44-51
 
-	tsx
-	cli
+	tsx			// 2, 46-53
+	cli			// 2, 48-55
 	.for (var i=0; i<8; i++) {
-		nop
+		nop		// 2*8, 64-71
 	}
 
 irq_top_wedge:
-	txs
+	// Now our second IRQ gets invoked.
+	// We have spent either 7 or 8 cycles.
+	// 7, 8
+	txs			// 2, 9-10
 
-	ldx #$08
-	dex
-	bne *-1
-	bit $ea
+	ldx #$08		// 2, 11-12
+	dex			// \ 8*5-1 = 39, 50-51
+	bne *-1			// /
+	bit $ea			// 3, 53-54
 
-	lda $d012
-	cmp $d012
-	beq *+2			// Stable raster line after this instruction.
+	lda $d012		// 4, 57-58
+	cmp $d012		// 4, 61-62
+	beq *+2			// Jitter is stored in zero flag.
+				// Stable raster line after this instruction.
 
 	ldx #0
 !l:
@@ -116,7 +124,7 @@ irq_top_wedge:
 	jsr delay		// 6+6, 44
 	inc dummy		// 6, 50
 	nop
-	ldy #14
+	nop
 	inx			// 2, 56
 	cpx top_counter		// 4, 60
 	bne !l-			// 3, 63
@@ -124,12 +132,20 @@ irq_top_wedge:
 	// check if wobble logic should run
 
 	cpx #top_lines		// 2, 2
-	beq !no_inc+		// 2/3, 4/5
+	beq wobble		// 2/3, 4/5
 
-	sty $d020
+	ldx wobble_timer
+	inx
+	cpx #4
+	bne !l+
+	ldx #0
 	inc top_counter
+!l:
+	stx wobble_timer
 
 !done:
+	ldy #14
+	sty $d020
 	lda #<irq_bottom	// Restore first IRQ for stable raster
 	sta $fffe
 	lda #>irq_bottom
@@ -147,18 +163,21 @@ irq_top_wedge:
 	pla
 	rti
 
+wobble_timer:
+	.byte 0
+
 	// raster line: irq_line_top + 1 + top_lines == 49
-!no_inc:
+wobble:
 	// spent cycles from last check: 5
 
 	// 49: NORMAL LINE
 	ldx wobble_pos		// 2, 7
 
-	jsr delay2		// 24, 31
-	jsr delay		// 12, 43
-
 	lda wobble_tbl, x	// 4, 47
 	sta $d016		// 4, 51
+
+	jsr delay2		// 24, 31
+	jsr delay		// 12, 43
 
 	txa			// 2, 53
 	inx			// 2, 55
@@ -213,24 +232,6 @@ irq_top_wedge:
 
 	jmp !done-
 
-	ldx wobble_pos
-	ldy #2 * 8
-
-!l:
-	lda wobble_tbl, x
-	sta $d016
-
-	jsr delay2		// 6+6+6+6, 29
-	jsr delay2		// 6+6+6+6, 53
-
-	inx
-
-	dey
-	bne !l-
-
-	lda #$c8
-	sta $d016
-
 delay2:
 	jsr delay
 delay:
@@ -243,10 +244,8 @@ irq_bottom:
 	tya
 	pha
 
-fetch_irq_top_lo:
 	lda #<irq_top
 	sta $fffe
-fetch_irq_top_hi:
 	lda #>irq_top
 	sta $ffff
 
