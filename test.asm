@@ -8,7 +8,8 @@ BasicUpstart2(main)
 }
 
 .var irq_line_top = 40
-.var irq_line_bottom = 240
+.var irq_line_middle = 200
+.var irq_line_bottom = 250
 
 .var roll_timer = 6
 
@@ -60,6 +61,14 @@ main:
 	sta $0400 + 19 * 40, x
 	inx
 	cpx #4 * 40
+	bne !l-
+
+	// setup colram at bottom to white
+	lda #1
+	ldx #0
+!l:
+	sta $d800 + 19 * 40, x
+	inx
 	bne !l-
 
 
@@ -123,7 +132,6 @@ irq_top:
 	tya
 	pha
 
-	inc $d020
 	ldx #8
 !l:
 	dex
@@ -468,14 +476,13 @@ irq_top:
 
 !ignore:
 	dec !timer- + 1
-	dec $d020
 
-	lda #irq_line_bottom
+	lda #irq_line_middle
 	sta $d012
 
-	lda #<irq_bottom
+	lda #<irq_middle
 	sta $fffe
-	lda #>irq_bottom
+	lda #>irq_middle
 	sta $ffff
 
 	// acknowledge irq
@@ -489,6 +496,52 @@ irq_top:
 dummy:
 	rti
 
+irq_middle:
+	pha
+	txa
+	pha
+	tya
+	pha
+
+	ldx #5
+	dex
+	bne *-1
+
+	lda #0
+	sta $d020
+	sta $d021
+
+	ldx sinus_pos
+	lda sinus, x
+	sta $d011
+	inx
+	txa
+	and #$1f
+	sta sinus_pos
+
+	lda #irq_line_bottom
+	sta $d012
+
+	lda #<irq_bottom
+	sta $fffe
+	lda #>irq_bottom
+	sta $ffff
+
+	asl $d019
+
+	pla
+	tay
+	pla
+	tax
+	pla
+
+	rti
+
+sinus_pos:
+	.byte 0
+sinus:
+	.fill $20, round($1b - $4 + $3 * sin(toRadians(i * 360 / $20)))
+
 irq_bottom:
 	pha
 	txa
@@ -496,11 +549,21 @@ irq_bottom:
 	tya
 	pha
 
-	inc $d020
+	ldx #6
+	dex
+	bne *-1
+	bit $ea
+	nop
+
+	lda #14
+	sta $d020
+	lda #6
+	sta $d021
 
 	jsr music.play
 
-	dec $d020
+	lda #$1b
+	sta $d011
 
 	lda #irq_line_top
 	sta $d012
