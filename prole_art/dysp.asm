@@ -3,8 +3,8 @@
 
 BasicUpstart2(start)
 
-//.var music = LoadSid("/home/methos/Music/C64Music/MUSICIANS/0-9/20CC/van_Santen_Edwin/Blackmail_Tune_1.sid")
-.var music = LoadSid("/home/methos/Music/C64Music/MUSICIANS/J/JCH/Training.sid")
+//.var music = LoadSid("/home/methos/Music/HVSC69/MUSICIANS/0-9/20CC/van_Santen_Edwin/Blackmail_Tune_1.sid")
+.var music = LoadSid("/home/methos/Music/HVSC69/MUSICIANS/J/JCH/Training.sid")
 
 start:
 	jsr $fda3

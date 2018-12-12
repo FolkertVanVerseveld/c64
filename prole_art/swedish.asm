@@ -32,7 +32,7 @@ BasicUpstart2(main)
 // swedish flag
 // twister like effect?
 
-.var music = LoadSid("/home/methos/Music/C64Music/MUSICIANS/0-9/20CC/van_Santen_Edwin/Blackmail_Tune_1.sid")
+.var music = LoadSid("/home/methos/Music/HVSC69/MUSICIANS/0-9/20CC/van_Santen_Edwin/Blackmail_Tune_1.sid")
 
 main:
 	lda #0

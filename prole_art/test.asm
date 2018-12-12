@@ -11,7 +11,7 @@ BasicUpstart2(main)
 
 .var irq_line_bottom = 312 - 64
 
-.var music = LoadSid("/home/methos/Music/C64Music/MUSICIANS/0-9/20CC/van_Santen_Edwin/Blackmail_Tune_1.sid")
+.var music = LoadSid("/home/methos/Music/HVSC69/MUSICIANS/0-9/20CC/van_Santen_Edwin/Blackmail_Tune_1.sid")
 
 main:
 	// fill first row to see if wobble effect is correctly implemented
