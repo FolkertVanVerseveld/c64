@@ -1,0 +1,28 @@
+#!/bin/bash
+name=bars
+
+p=
+while :; do
+	inotifywait -qre modify "$name".asm
+	rm -f "$name".prg
+	kickass -afo "$name".asm
+	if [ ! -z $p ]; then
+		kill -9 $p
+		p=
+	fi
+	emu=no
+	if [ -f "$name".prg ]; then
+		if [ $emu == no ]; then
+			python sock.py p "$name".prg 192.168.2.64
+			if [ $? -eq 0 ]; then
+				continue
+			fi
+		else
+			x64 "$name".prg >/dev/null &
+		fi
+		p=$!
+	else
+		echo --------
+		echo
+	fi
+done

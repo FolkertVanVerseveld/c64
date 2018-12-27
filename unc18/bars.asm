@@ -1,20 +1,13 @@
-// Assembler: KickAssembler v4.19
-// source: codebase64.org/doku.php?id=base:dysp_d017
+:BasicUpstart2(start)
 
-BasicUpstart2(start)
+.var irq_line_top = $20 - 1
 
-.var irq_line_top = $28 - 1
+.var screen = $0400
+.var colram = $d800
 
-.var music = LoadSid("/home/methos/Music/HVSC69/MUSICIANS/0-9/20CC/van_Santen_Edwin/Blackmail_Tune_1.sid")
-//.var music = LoadSid("/home/methos/Music/HVSC69/MUSICIANS/J/JCH/Training.sid")
+#import "pseudo.lib"
 
 start:
-//	lda #6			// Set color to black
-//	sta $d020		// for border
-//	sta $d021		// and screen
-
-	// setup interrupts
-
 	sei
 	lda #$35		// Disable KERNAL and BASIC ROM
 	sta $01			// Enable all RAM
@@ -23,6 +16,13 @@ start:
 	sta $fffe
 	lda #>irq_top
 	sta $ffff
+
+	lda #<dummy
+	sta $fffa
+	sta $fffc
+	lda #>dummy
+	sta $fffb
+	sta $fffd
 
 	lda #%00011011		// Load screen control:
 				// Vertical scroll    : 3
@@ -62,11 +62,7 @@ start:
 
 .align $100
 irq_top:
-	pha
-	txa
-	pha
-	tya
-	pha
+	irq
 
 	lda #<irq_top_wedge	// Daisy chain double IRQ for stable raster
 	sta $fffe
@@ -95,31 +91,32 @@ irq_top_wedge:
 	lda $d012
 	cmp $d012
 	beq *+2
+	// vv stable raster here
 
-	// Stable raster line here
-	inc $d020
-	jsr delay2
-	dec $d020
+	ldx #0
+!:
+	lda coltbl, x
+	sta $d020
 
-	lda #<irq_top		// Restore first IRQ for stable raster
-	sta $fffe
-	lda #>irq_top
-	sta $ffff
+	ldy #9
+!loop:
+	dey
+	bne !loop-
+	nop
 
-	lda #irq_line_top	// Restore raster line
-	sta $d012
+	inx
+	cpx #16
+	bne !-
 
-	inc $d019
+	asl $d019
 
-	pla
-	tay
-	pla
-	tax
-	pla
+	qri #irq_line_top : #irq_top
+
+dummy:
 	rti
 
-delay2:
-	jsr delay
-delay:
-	rts
-
+coltbl:
+	.byte 4, 7, 1, 2
+	.byte 3, 14, 9, 0
+	.byte 12, 15, 8, 5
+	.byte 10, 6, 13, 11
