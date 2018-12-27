@@ -1,9 +1,16 @@
 :BasicUpstart2(start)
 
-.var irq_line_top = $20 - 1
+.var irq_line_top = $10 - 1
 
 .var screen = $0400
 .var colram = $d800
+
+.var lines_border_top = $30 - irq_line_top + 1
+
+// FIXME use proper value (now using dummy testvalue)
+.var lines_middle = $b0
+
+.var lines_counter = $fb
 
 #import "pseudo.lib"
 
@@ -98,24 +105,131 @@ irq_top_wedge:
 	lda coltbl, x
 	sta $d020
 
+	// TODO figure out if badline
 	ldy #9
-!loop:
 	dey
-	bne !loop-
+	bne *-1
 	nop
 
 	inx
-	cpx #16
+	cpx #lines_border_top
 	bne !-
 
+!bad:
+	// NOTE: one cycle spilled already from previous branch
+
+	// bad line handling
+	lda coltbl, x // 4, 5
+	sta $d020     // 4, 9
+	inx           // 2, 11
+	// 10 cycles left, just prepare counter for normal lines
+	nop           // 2, 13
+	lda #7        // 2, 15
+	sta lines_counter // 3, 18
+	// TODO figure out why we need 3 cycles
+
+
+	// this is duplicated from previous loop, but hey, it works...
+!:
+	bit $ea           // 3, 21
+	nop               // 2, 20
+
+	lda coltbl, x
+	sta $d020
+
+	ldy #7
+	dey
+	bne *-1
+
+	inx
+	cpx #lines_middle
+	beq !ack+
+
+	dec lines_counter
+	bne !-
+
+	jmp !bad-
+
+!ack:
 	asl $d019
 
 	qri #irq_line_top : #irq_top
+
+bad_line:
+	inx
+// bad line handling: only 20 out of 63 cycles
+	lda coltbl, x // 4, 4
+	sta $d020     // 4, 8
+	inx           // 2, 10
+	cpx #16       // 2, 12
+	beq !ack-     // 2, 14
+	bit $ea       // 3, 17
+	jmp !-        // 3, 20
 
 dummy:
 	rti
 
 coltbl:
+	.byte 4, 7, 1, 2
+	.byte 3, 14, 9, 0
+	.byte 12, 15, 8, 5
+	.byte 10, 6, 13, 11
+	.byte 4, 7, 1, 2
+	.byte 3, 14, 9, 0
+	.byte 12, 15, 8, 5
+	.byte 10, 6, 13, 11
+	.byte 4, 7, 1, 2
+	.byte 3, 14, 9, 0
+	.byte 12, 15, 8, 5
+	.byte 10, 6, 13, 11
+	.byte 4, 7, 1, 2
+	.byte 3, 14, 9, 0
+	.byte 12, 15, 8, 5
+	.byte 10, 6, 13, 11
+	.byte 4, 7, 1, 2
+	.byte 3, 14, 9, 0
+	.byte 12, 15, 8, 5
+	.byte 10, 6, 13, 11
+	.byte 4, 7, 1, 2
+	.byte 3, 14, 9, 0
+	.byte 12, 15, 8, 5
+	.byte 10, 6, 13, 11
+	.byte 4, 7, 1, 2
+	.byte 3, 14, 9, 0
+	.byte 12, 15, 8, 5
+	.byte 10, 6, 13, 11
+	.byte 4, 7, 1, 2
+	.byte 3, 14, 9, 0
+	.byte 12, 15, 8, 5
+	.byte 10, 6, 13, 11
+	.byte 4, 7, 1, 2
+	.byte 3, 14, 9, 0
+	.byte 12, 15, 8, 5
+	.byte 10, 6, 13, 11
+	.byte 4, 7, 1, 2
+	.byte 3, 14, 9, 0
+	.byte 12, 15, 8, 5
+	.byte 10, 6, 13, 11
+	.byte 4, 7, 1, 2
+	.byte 3, 14, 9, 0
+	.byte 12, 15, 8, 5
+	.byte 10, 6, 13, 11
+	.byte 4, 7, 1, 2
+	.byte 3, 14, 9, 0
+	.byte 12, 15, 8, 5
+	.byte 10, 6, 13, 11
+	.byte 4, 7, 1, 2
+	.byte 3, 14, 9, 0
+	.byte 12, 15, 8, 5
+	.byte 10, 6, 13, 11
+	.byte 4, 7, 1, 2
+	.byte 3, 14, 9, 0
+	.byte 12, 15, 8, 5
+	.byte 10, 6, 13, 11
+	.byte 4, 7, 1, 2
+	.byte 3, 14, 9, 0
+	.byte 12, 15, 8, 5
+	.byte 10, 6, 13, 11
 	.byte 4, 7, 1, 2
 	.byte 3, 14, 9, 0
 	.byte 12, 15, 8, 5
