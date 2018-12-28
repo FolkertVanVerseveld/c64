@@ -8,7 +8,7 @@
 .var lines_border_top = $30 - irq_line_top + 1
 
 // FIXME use proper value (now using dummy testvalue)
-.var lines_middle = $b0
+.var lines_middle = $ea
 
 .var lines_counter = $fb
 
@@ -123,17 +123,19 @@ irq_top_wedge:
 	sta $d020     // 4, 9
 	inx           // 2, 11
 	// 10 cycles left, just prepare counter for normal lines
-	nop           // 2, 13
 	lda #7        // 2, 15
 	sta lines_counter // 3, 18
 	// TODO figure out why we need 3 cycles
+	bit $ea
 
+	jmp !fst+
 
 	// this is duplicated from previous loop, but hey, it works...
 !:
-	bit $ea           // 3, 21
-	nop               // 2, 20
+	nop
+	bit $ea
 
+!fst:
 	lda coltbl, x
 	sta $d020
 
@@ -148,6 +150,7 @@ irq_top_wedge:
 	dec lines_counter
 	bne !-
 
+	bit $ea
 	jmp !bad-
 
 !ack:
@@ -168,6 +171,8 @@ bad_line:
 
 dummy:
 	rti
+
+.align $100
 
 coltbl:
 	.byte 4, 7, 1, 2
