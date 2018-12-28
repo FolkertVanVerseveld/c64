@@ -12,14 +12,19 @@
 // FIXME use proper value (now using dummy testvalue)
 .var lines_middle = $60
 
-.var lines_counter = $fb
+.var lines_counter = $ff
 
 .var screen_scroll = screen + 23 * 40
 
+#import "local.inc"
 #import "pseudo.lib"
+
+.var music = LoadSid(HVSC + "/MUSICIANS/0-9/20CC/van_Santen_Edwin/Cyberfunk.sid")
 
 start:
 	lda #0
+	jsr music.init
+
 	sta $d020
 	sta $d021
 
@@ -211,6 +216,8 @@ irq_border:
 	irq
 	//inc $d020
 
+	jsr music.play
+
 	jsr scroll
 
 	lda #$14
@@ -277,8 +284,8 @@ scroll_xpos: .byte 0
 scroll_speed: .byte $02
 scroll_charNo: .byte 0
 scroll_text:
-	.text "hello under construction. this is just a compofiller completely coded at the party of course. it took about seven hours to make. "
-	.text "code by methos, gfx by snorro. "
+	.text "hello under construction! this is just a compofiller completely coded at the party of course. it took about 7 hours to make. "
+	.text "code and font by methos, gfx by snorro, music by evs. "
 	.text "all hail the one and only shin chan!!! !! !! ! ! !"
 	.text "text loops now                      "
 	.byte $ff
@@ -302,14 +309,19 @@ sinusrol:
 	.byte 0, 0, 0, 0, 0, 0, 0
 	.byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 sinusrol_end:
-	.byte 4, 7, 1, 2, 3, 14, 9, 0, 12, 15, 8, 5, 10, 6, 0, 0
-	.byte 0, 0, 0, 0, 0, 0, 0, 0
+	//.byte 5, 0, 5, 3, 0, 5, 3, 13, 0, 5, 3, 13, 7, 0, 5, 3
+	//.byte 13, 7, 1
+
+	.byte 1, 7, 13
+	.byte 3, 5, 0, 7, 13, 3, 5, 0, 13, 3, 5, 0, 3, 5, 0, 5
+
+	.byte 0, 0, 0, 0, 0
 
 sinus:
 	.fill $40, round($12*sin(toRadians(i*360/$80)))
 
 roltbl:
-	.byte 1, 1, 3, 14, 5, 4, 6, 11
+	.byte 6, 4, 10, 7, 10, 8, 2, 9
 
 rolpos:
 	.byte 0
@@ -428,7 +440,7 @@ sinusroll:
 	and #$3f
 	tax
 	stx sinuspos
-	lda #10
+	lda #1
 	ldy sinus, x
 	sta sinusrol, y
 	// vul de rest met dezelfde kleur
@@ -499,6 +511,36 @@ d 13: licht groen
 e 14: lichtblauw
 f 15: lichtgrijs
 */
+
+// music begin
+	*=music.location "Music"
+	.fill music.size, music.getData(i)
+
+//----------------------------------------------------------
+	// Print the music info while assembling
+	.print ""
+	.print "SID Data"
+	.print "--------"
+	.print "location=$"+toHexString(music.location)
+	.print "init=$"+toHexString(music.init)
+	.print "play=$"+toHexString(music.play)
+	.print "songs="+music.songs
+	.print "startSong="+music.startSong
+	.print "size=$"+toHexString(music.size)
+	.print "name="+music.name
+	.print "author="+music.author
+	.print "copyright="+music.copyright
+
+	.print ""
+	.print "Additional tech data"
+	.print "--------------------"
+	.print "header="+music.header
+	.print "header version="+music.version
+	.print "flags="+toBinaryString(music.flags)
+	.print "speed="+toBinaryString(music.speed)
+	.print "startpage="+music.startpage
+	.print "pagelength="+music.pagelength
+// music end
 
 .align $100
 image:
@@ -573,3 +615,4 @@ texts:
 	.return picture.getSinglecolorByte(xpos,ypos)
 }
 .fill $800, picToCharset(i,charsetPic)
+
