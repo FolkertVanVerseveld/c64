@@ -125,17 +125,16 @@ irq_top_wedge:
 	// 10 cycles left, just prepare counter for normal lines
 	lda #7        // 2, 15
 	sta lines_counter // 3, 18
-	// TODO figure out why we need 3 cycles
-	bit $ea
 
+	// TODO figure out why we need 3 cycles
 	jmp !fst+
 
 	// this is duplicated from previous loop, but hey, it works...
 !:
 	nop
+!fst:
 	bit $ea
 
-!fst:
 	lda coltbl, x
 	sta $d020
 
