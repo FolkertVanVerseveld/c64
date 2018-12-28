@@ -106,12 +106,13 @@ irq_top_wedge:
 	sta $d020
 
 	// TODO figure out if badline
-	ldy #9
+	ldy #8
 	dey
 	bne *-1
-	nop
+	bit $ea
 
 	inx
+	lda coltbl, x
 	cpx #lines_border_top
 	bne !-
 
@@ -119,8 +120,8 @@ irq_top_wedge:
 	// NOTE: one cycle spilled already from previous branch
 
 	// bad line handling
-	lda coltbl, x // 4, 5
-	sta $d020     // 4, 9
+	sta $d020     // 4, 5
+	sta $d021     // 4, 9
 	inx           // 2, 11
 	// 10 cycles left, just prepare counter for normal lines
 	lda #7        // 2, 15
@@ -132,24 +133,31 @@ irq_top_wedge:
 	// this is duplicated from previous loop, but hey, it works...
 !:
 	nop
-!fst:
+	nop
 	bit $ea
+
+!fst:
 
 	lda coltbl, x
 	sta $d020
+	sta $d021
 
-	ldy #7
+	ldy #5
 	dey
 	bne *-1
 
 	inx
+	lda coltbl, x
 	cpx #lines_middle
 	beq !ack+
 
 	dec lines_counter
 	bne !-
 
-	bit $ea
+	nop
+	nop
+	nop
+	nop
 	jmp !bad-
 
 !ack:
@@ -174,67 +182,22 @@ dummy:
 .align $100
 
 coltbl:
-	.byte 4, 7, 1, 2
-	.byte 3, 14, 9, 0
-	.byte 12, 15, 8, 5
-	.byte 10, 6, 13, 11
-	.byte 4, 7, 1, 2
-	.byte 3, 14, 9, 0
-	.byte 12, 15, 8, 5
-	.byte 10, 6, 13, 11
-	.byte 4, 7, 1, 2
-	.byte 3, 14, 9, 0
-	.byte 12, 15, 8, 5
-	.byte 10, 6, 13, 11
-	.byte 4, 7, 1, 2
-	.byte 3, 14, 9, 0
-	.byte 12, 15, 8, 5
-	.byte 10, 6, 13, 11
-	.byte 4, 7, 1, 2
-	.byte 3, 14, 9, 0
-	.byte 12, 15, 8, 5
-	.byte 10, 6, 13, 11
-	.byte 4, 7, 1, 2
-	.byte 3, 14, 9, 0
-	.byte 12, 15, 8, 5
-	.byte 10, 6, 13, 11
-	.byte 4, 7, 1, 2
-	.byte 3, 14, 9, 0
-	.byte 12, 15, 8, 5
-	.byte 10, 6, 13, 11
-	.byte 4, 7, 1, 2
-	.byte 3, 14, 9, 0
-	.byte 12, 15, 8, 5
-	.byte 10, 6, 13, 11
-	.byte 4, 7, 1, 2
-	.byte 3, 14, 9, 0
-	.byte 12, 15, 8, 5
-	.byte 10, 6, 13, 11
-	.byte 4, 7, 1, 2
-	.byte 3, 14, 9, 0
-	.byte 12, 15, 8, 5
-	.byte 10, 6, 13, 11
-	.byte 4, 7, 1, 2
-	.byte 3, 14, 9, 0
-	.byte 12, 15, 8, 5
-	.byte 10, 6, 13, 11
-	.byte 4, 7, 1, 2
-	.byte 3, 14, 9, 0
-	.byte 12, 15, 8, 5
-	.byte 10, 6, 13, 11
-	.byte 4, 7, 1, 2
-	.byte 3, 14, 9, 0
-	.byte 12, 15, 8, 5
-	.byte 10, 6, 13, 11
-	.byte 4, 7, 1, 2
-	.byte 3, 14, 9, 0
-	.byte 12, 15, 8, 5
-	.byte 10, 6, 13, 11
-	.byte 4, 7, 1, 2
-	.byte 3, 14, 9, 0
-	.byte 12, 15, 8, 5
-	.byte 10, 6, 13, 11
-	.byte 4, 7, 1, 2
-	.byte 3, 14, 9, 0
-	.byte 12, 15, 8, 5
-	.byte 10, 6, 13, 11
+	.byte 4, 7, 1, 2, 3, 14, 9, 0, 12, 15, 8, 5, 10, 6, 13, 11
+	.byte 4, 7, 1, 2, 3, 14, 9, 0, 12, 15, 8, 5, 10, 6, 13, 11
+	.byte 4, 7, 1, 2, 3, 14, 9, 0, 12, 15, 8, 5, 10, 6, 13, 11
+	.byte 4, 7, 1, 2, 3, 14, 9, 0, 12, 15, 8, 5, 10, 6, 13, 11
+
+	.byte 4, 7, 1, 2, 3, 14, 9, 0, 12, 15, 8, 5, 10, 6, 13, 11
+	.byte 4, 7, 1, 2, 3, 14, 9, 0, 12, 15, 8, 5, 10, 6, 13, 11
+	.byte 4, 7, 1, 2, 3, 14, 9, 0, 12, 15, 8, 5, 10, 6, 13, 11
+	.byte 4, 7, 1, 2, 3, 14, 9, 0, 12, 15, 8, 5, 10, 6, 13, 11
+
+	.byte 4, 7, 1, 2, 3, 14, 9, 0, 12, 15, 8, 5, 10, 6, 13, 11
+	.byte 4, 7, 1, 2, 3, 14, 9, 0, 12, 15, 8, 5, 10, 6, 13, 11
+	.byte 4, 7, 1, 2, 3, 14, 9, 0, 12, 15, 8, 5, 10, 6, 13, 11
+	.byte 4, 7, 1, 2, 3, 14, 9, 0, 12, 15, 8, 5, 10, 6, 13, 11
+
+	.byte 4, 7, 1, 2, 3, 14, 9, 0, 12, 15, 8, 5, 10, 6, 13, 11
+	.byte 4, 7, 1, 2, 3, 14, 9, 0, 12, 15, 8, 5, 10, 6, 13, 11
+	.byte 4, 7, 1, 2, 3, 14, 9, 0, 12, 15, 8, 5, 10, 6, 13, 11
+	.byte 4, 7, 1, 2, 3, 14, 9, 0, 12, 15, 8, 5, 10, 6, 13, 11
