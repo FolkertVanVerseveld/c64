@@ -206,7 +206,7 @@ irq_bottom:
 	lda #$c0
 	ora scroll_xpos
 	sta $d016
-	lda #$1e
+	lda #$1a
 	sta $d018
 
 	//dec $d020
@@ -285,9 +285,17 @@ scroll_speed: .byte $02
 scroll_charNo: .byte 0
 scroll_text:
 	.text "hello under construction! this is just a compofiller completely coded at the party of course. it took about 7 hours to make. "
-	.text "code and font by methos, gfx by snorro, music by evs. "
-	.text "all hail the one and only shin chan!!! !! !! ! ! !"
-	.text "text loops now                      "
+	.text "code by methos, gfx by snorro, music by evs. "
+	.text "all hail the one and only shin chan!!! !! !! ! ! !  "
+	.text "methos on da keys, how are you doing party people! "
+	.text "if you like this demo, make some noice! "
+	.text "party on and happy 2019! "
+	.text "leaving the keys to my brother... .. . . .       "
+	.text "finally i can enjoy a few days in company with my brother, "
+	.text "rather than having my friend visiting who only wants to play age of empires. "
+	.text "this is my first demoparty and i am really liking it! "
+	.text "i hope you enjoy this demo as much as we did creating it! "
+	.text "snorro signing off, because i do not know what to write anymore.... ... ... .. .. .. . . . . .                       "
 	.byte $ff
 
 .align $80
@@ -318,7 +326,7 @@ sinusrol_end:
 	.byte 0, 0, 0, 0, 0
 
 sinus:
-	.fill $40, round($12*sin(toRadians(i*360/$80)))
+	.fill $40, round($10*sin(toRadians(i*360/$80)))
 
 roltbl:
 	.byte 6, 4, 10, 7, 10, 8, 2, 9
@@ -438,6 +446,11 @@ sinusroll:
 	inx
 	txa
 	and #$3f
+	bne !+
+	pha
+	jsr blit_next
+	pla
+!:
 	tax
 	stx sinuspos
 	lda #1
@@ -481,16 +494,43 @@ copy_image:
 
 blit_hide:
 	ldx #0
-	ldy #10
+	ldy #1
 !:
+blit_tput:
 	lda texts, x
 	sta screen + 5 * 40 + (40 - $18) / 2, x
 	tya
+blit_cput:
 	sta colram + 5 * 40 + (40 - $18) / 2, x
 	inx
 	cpx #$18
 	bne !-
 	rts
+
+// you may not globber y!!
+blit_next:
+	inc screen + 5 * 40 + (40 - $18) / 2
+	lda blit_tput + 1
+	clc
+	adc #$18
+	sta blit_tput + 1
+	bcc !+
+	inc blit_tput + 2
+!:
+	// reset if at end
+	ldx #<texts_end
+	lda #>texts_end
+	cpx blit_tput + 1
+	bne !+
+	cmp blit_tput + 2
+	bne !+
+	// TODO reset
+	lda #<texts
+	sta blit_tput + 1
+	lda #>texts
+	sta blit_tput + 2
+!:
+	jmp blit_hide
 
 /*
 kleurentabel:
@@ -552,6 +592,7 @@ image:
 	.byte	$20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
 	.byte	$20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
 	.byte	$20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
+	.byte	$20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
 	.byte	$20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $E9, $E0, $E0, $E0, $E0, $E0, $DF, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
 	.byte	$20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $E9, $E0, $E0, $E0, $DF, $E0, $E0, $E0, $E0, $E0, $E0, $DF, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
 	.byte	$20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $69, $E0, $E0, $E0, $5F, $E0, $E0, $E0, $E0, $DF, $E0, $E0, $DF, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
@@ -568,12 +609,12 @@ image:
 	.byte	$20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
 	.byte	$20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
 	.byte	$20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
-	.byte	$20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
 
 .align $100
 colors:
 	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
 	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $01, $01, $01, $01, $01, $01, $01, $01, $01, $01, $01, $01, $01, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
+	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
 	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
 	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
 	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
@@ -594,25 +635,53 @@ colors:
 	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0A, $02, $02, $02, $02, $02, $0A, $0A, $0A, $0A, $0A, $0A, $0A, $0A, $0A, $0A, $0A, $0A, $0A, $0A, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
 	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $02, $02, $02, $0A, $0A, $0A, $0A, $0A, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
 	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
 	.byte	$09, $08, $07, $07, $0d, $0d, $0d, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0e, $0d, $0d, $0d, $07, $07, $08, $09, $09
 	.byte	$09, $08, $07, $07, $0d, $0d, $0d, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0e, $0d, $0d, $0d, $07, $07, $08, $09, $09
+
+.pc = $2800 "Custom Font"
+//.var charsetPic = LoadPicture("ugly_font.gif", List().add($000000, $ffffff))
+.var charsetPic = LoadPicture("arrival_font.gif", List().add($000000, $ffffff))
+.function picToCharset(byteNo, picture) {
+       .var ypos = [byteNo&7] + 8*[[byteNo>>9]&1]
+       .var xpos = 2*[[byteNo>>3]&$3f] + [[byteNo>>10]&1]
+       .return picture.getSinglecolorByte(xpos,ypos)
+}
+.fill $800, picToCharset(i,charsetPic)
 
 
 	//     0123456789abcdef0123456789abcdef
 texts:
 	.text "       yo gasten!       "
 	.text "party coding to the max!"
-	.text "     code: methos       "
-	.text "      gfx: snorro       "
-
-.pc = $3800 "Custom Font"
-//.var charsetPic = LoadPicture("ugly_font.gif", List().add($000000, $ffffff))
-.var charsetPic = LoadPicture("arrival_font.gif", List().add($000000, $ffffff))
-.function picToCharset(byteNo, picture) {
-	.var ypos = [byteNo&7] + 8*[[byteNo>>9]&1]
-	.var xpos = 2*[[byteNo>>3]&$3f] + [[byteNo>>10]&1]
-	.return picture.getSinglecolorByte(xpos,ypos)
-}
-.fill $800, picToCharset(i,charsetPic)
-
+	.text "   released at unc 18   "
+	.text "      code: methos      "
+	.text "       gfx: snorro      "
+	.text "  font: methos & snorro "
+	.text "       sid: evs         "
+	.text "------------------------"
+	.text "      greetings to:     "
+	.text "    abyss connection,   "
+	.text "  bonzai, booze design, "
+	.text " camelot, crest, chorus,"
+	.text "   delysid, fairlight,  "
+	.text "     fantastic four     "
+	.text "     cracking group,    "
+	.text "hitman, hoaxers, laxity,"
+	.text "house designs, lft, mon,"
+	.text "  mayday, panda design, "
+	.text "plush, prosonix, oxyron,"
+	.text "  wilfred, duncantwain, "
+	.text " smash designs, scs*trc,"
+	.text "      triad, trsi,      "
+	.text "   acc, via, flevosap,  "
+	.text " odymeister, gorgelmel, "
+	.text "          and           "
+	.text "       finally...       "
+	.text "  !!! wolf from ac !!!  "
+	.text "------------------------"
+	.text " wir wuenschen euch ein "
+	.text "glueckliches neues jahr!"
+	.text "------------------------"
+	.text "                        "
+	.text "                        "
+texts_end:
