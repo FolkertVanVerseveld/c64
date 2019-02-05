@@ -1,0 +1,5 @@
+*.sym
+*.prg
+
+local.inc
+concept
