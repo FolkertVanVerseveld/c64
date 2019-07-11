@@ -2,6 +2,7 @@
 p=
 while :; do
 	inotifywait -qre modify test.asm
+	rm -f test.prg
 	kickass -afo test.asm
 	if [ ! -z $p ]; then
 		kill -9 $p
@@ -15,7 +16,8 @@ while :; do
 		fi
 	done
 	if [ $emu == no ]; then
-		python sock.py p test.prg 172.28.1.105
+		python sock.py p test.prg 172.28.1.102
+		continue
 		if [ $? -eq 0 ]; then
 			continue
 		fi

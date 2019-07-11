@@ -2,3 +2,16 @@ tornado achtig effect waarbij de tekst wiebelt.
 
 probeer eerst de wobble gewoon met d016 te doen
 als het lukt kunnen we het over meedere tekens schuiven
+
+scherm van boven naar beneden laten wiebelen
+dan border van onder naar boven met blauw vullen
+
+kijk of het lukt om sprites over stabiele raster te krijgen
+is erg lastig dus misschien maar laten zitten
+
+dan wat tekst over het scherm laten bewegen voor
+soort van introductie
+
+dan het moeilijkste: schermzoom
+
+zweedse + nederlandse vlag met aparte subvensters?

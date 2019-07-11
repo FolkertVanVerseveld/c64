@@ -51,10 +51,20 @@ const unsigned char boot_prompt[] = {
 	0x12, 0x05, 0x01, 0x04, 0x19, 0x2e
 };
 
+/*
+READY.
+LOAD"*",8,1:
+
+SEARCHING FOR *
+LOADING
+READY.
+RUN
+*/
+
 #define TITLE "Prole Art Debut Concept"
 
 #define WIDTH 384
-#define HEIGHT 271
+#define HEIGHT 272
 
 static SDL_Window *win;
 static SDL_GLContext gl;
