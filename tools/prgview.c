@@ -34,7 +34,8 @@ unsigned cmd_buf_pos = 0;
 #define TYPE_WORD 1
 #define TYPE_OPCODE 2
 #define TYPE_BASIC_OPCODE 3
-#define TYPE_CHAR 4
+#define TYPE_BASIC_LINE 4
+#define TYPE_CHAR 5
 
 // sizeof largest type
 #define TYPE_LENGTH 3
@@ -61,13 +62,6 @@ const char *basic_tokens[256] = {
 	[0xC8]="LEFT$" ,[0xC9]="RIGHT$",[0xCA]="MID$",[0xCB]="GO"
 };
 
-#include "6510.c"
-
-static inline uint16_t aw16(unsigned base, unsigned v)
-{
-	return (base + v) & 0xffff;
-}
-
 char *strncpy0(char *dest, const char *src, size_t n)
 {
 	char *ptr = strncpy(dest, src, n);
@@ -79,6 +73,7 @@ unsigned type_len(uint16_t pos)
 {
 	switch (type[pos]) {
 	case TYPE_OPCODE: return opl[optbl[file[pos]].type];
+	case TYPE_BASIC_LINE:
 	case TYPE_WORD: return 2;
 	default: return 1;
 	}
@@ -289,6 +284,10 @@ void display(void)
 				put(basic_tokens[file[tpos]]);
 			break;
 		}
+		case TYPE_BASIC_LINE:
+			format("%d", (file[aw16(tpos, 1)] << 8) + file[tpos]);
+			tpos += 2 - 1;
+			break;
 		case TYPE_OPCODE: {
 			const struct op *o = &optbl[file[tpos]];
 			unsigned l = opl[o->type];
@@ -297,16 +296,16 @@ void display(void)
 
 			switch (o->type) {
 			case O_IMP: put(o->name); break;
-			case O_IMM: format("%s $%02X\n", o->name, file[tp1]); break;
-			case O_ZP : format("%s $%02X\n", o->name, file[tp1]); break;
-			case O_ZPX: format("%s $%02X,X\n", o->name, file[tp1]); break;
-			case O_ZPY: format("%s $%02X,Y\n", o->name, file[tp1]); break;
-			case O_IZX: format("%s ($%02X, X)\n", o->name, file[tp1]); break;
-			case O_IZY: format("%s ($%02X), Y\n", o->name, file[tp1]); break;
-			case O_ABS: format("%s $%04X\n", o->name, file[tp2] << 8 | file[tp1]); break;
-			case O_ABX: format("%s $%04X,X\n", o->name, file[tp2] << 8 | file[tp1]); break;
-			case O_ABY: format("%s $%04X,Y\n", o->name, file[tp2] << 8 | file[tp1]); break;
-			case O_REL: format("%s $%02X\n", o->name, file[tp1]); break;
+			case O_IMM: format("%s $%02X", o->name, file[tp1]); break;
+			case O_ZP : format("%s $%02X", o->name, file[tp1]); break;
+			case O_ZPX: format("%s $%02X,X", o->name, file[tp1]); break;
+			case O_ZPY: format("%s $%02X,Y", o->name, file[tp1]); break;
+			case O_IZX: format("%s ($%02X, X)", o->name, file[tp1]); break;
+			case O_IZY: format("%s ($%02X), Y", o->name, file[tp1]); break;
+			case O_ABS: format("%s $%04X", o->name, file[tp2] << 8 | file[tp1]); break;
+			case O_ABX: format("%s $%04X,X", o->name, file[tp2] << 8 | file[tp1]); break;
+			case O_ABY: format("%s $%04X,Y", o->name, file[tp2] << 8 | file[tp1]); break;
+			case O_REL: format("%s $%04X", o->name, aw16(tp2, (int8_t)file[tp1])); break;
 			default: goto unknown_byte;
 			}
 
@@ -326,7 +325,7 @@ void display(void)
 			format(".word %04X", file[tpos + 1] << 8 | file[tpos]);
 			buf[8] = HEX[file[tpos + 1] >> 4];
 			buf[9] = HEX[file[tpos + 1] & 0xf];
-			++tpos;
+			tpos += 2 - 1;
 			break;
 		case TYPE_CHAR:
 			put(".byte ' '");
@@ -403,6 +402,7 @@ int mainloop(void)
 					case 'b':
 						switch (cmd_buf[3]) {
 						case 'i': type[pos] = TYPE_BASIC_OPCODE; break;
+						case 'l': type[pos] = TYPE_BASIC_LINE; break;
 						case ' ':
 						case '\0': type[pos] = TYPE_DATA; break;
 						default: strcpy(status, "Bad type"); break;
@@ -434,6 +434,14 @@ stop:
 					case 'c': type[pos] = TYPE_CHAR; break;
 					case '\0': type[pos] = TYPE_DATA; break;
 					default: strcpy(status, "Bad type"); break;
+					}
+				} else if (cmd_buf_pos >= 2 && cmd_buf[1] == 'g') {
+					unsigned dest;
+
+					if (sscanf(cmd_buf + 2, "%X", &dest) != 1 || dest > UINT16_MAX) {
+						strcpy(status, "Bad address");
+					} else {
+						offset = pos = dest;
 					}
 				} else {
 					strcpy(status, "Unknown command");

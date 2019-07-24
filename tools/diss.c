@@ -7,6 +7,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include "6510.h"
+
 #define COL 40
 
 #define D_ROW 8
@@ -16,8 +18,6 @@
 #define T_T64 2
 #define T_D64 3
 #define T_G64 4
-
-#include "6510.c"
 
 struct bfile {
 	int fd;
@@ -119,7 +119,7 @@ static void dump(const void *ptr, size_t n, unsigned row)
 		continue;\
 	}
 
-static int dump_prg(const void *ptr, size_t n, unsigned row)
+static int dump_prg(const void *ptr, size_t n)
 {
 	const unsigned char *data;
 	unsigned load;
@@ -137,18 +137,21 @@ static int dump_prg(const void *ptr, size_t n, unsigned row)
 		const struct op *o = &optbl[data[i]];
 		unsigned l = opl[o->type];
 		chkn(l);
+
+		unsigned tp1 = aw16(i, 1), tp2 = aw16(i, 2);
+
 		switch(o->type) {
 		case O_IMP: puts(o->name); break;
-		case O_IMM: printf("%s $%02X\n", o->name, data[i + 1]); break;
-		case O_ZP : printf("%s $%02X\n", o->name, data[i + 1]); break;
-		case O_ZPX: printf("%s $%02X,X\n", o->name, data[i + 1]); break;
-		case O_ZPY: printf("%s $%02X,Y\n", o->name, data[i + 1]); break;
-		case O_IZX: printf("%s ($%02X, X)\n", o->name, data[i + 1]); break;
-		case O_IZY: printf("%s ($%02X), Y\n", o->name, data[i + 1]); break;
-		case O_ABS: printf("%s $%04X\n", o->name, data[i + 2] << 8 | data[i + 1]); break;
-		case O_ABX: printf("%s $%04X,X\n", o->name, data[i + 2] << 8 | data[i + 1]); break;
-		case O_ABY: printf("%s $%04X,Y\n", o->name, data[i + 2] << 8 | data[i + 1]); break;
-		case O_REL: printf("%s $%02X\n", o->name, data[i + 1]); break;
+		case O_IMM: printf("%s $%02X\n", o->name, data[tp1]); break;
+		case O_ZP : printf("%s $%02X\n", o->name, data[tp1]); break;
+		case O_ZPX: printf("%s $%02X,X\n", o->name, data[tp1]); break;
+		case O_ZPY: printf("%s $%02X,Y\n", o->name, data[tp1]); break;
+		case O_IZX: printf("%s ($%02X, X)\n", o->name, data[tp1]); break;
+		case O_IZY: printf("%s ($%02X), Y\n", o->name, data[tp1]); break;
+		case O_ABS: printf("%s $%04X\n", o->name, data[tp2] << 8 | data[tp1]); break;
+		case O_ABX: printf("%s $%04X,X\n", o->name, data[tp2] << 8 | data[tp1]); break;
+		case O_ABY: printf("%s $%04X,Y\n", o->name, data[tp2] << 8 | data[tp1]); break;
+		case O_REL: printf("%s $%04X\n", o->name, aw16(load + tp2, (int8_t)data[tp1])); break;
 		default: printf(".byte $%02X\n", data[i]); break;
 		}
 		i += l;
@@ -168,7 +171,7 @@ static int diss(const struct bfile *f)
 	);
 	switch (f->type) {
 	case T_PRG:
-		ret = dump_prg(f->data, f->st.st_size, D_ROW);
+		ret = dump_prg(f->data, f->st.st_size);
 		break;
 	default:
 		dump(f->data, f->st.st_size, D_ROW);

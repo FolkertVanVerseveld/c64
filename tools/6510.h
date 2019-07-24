@@ -1,6 +1,8 @@
 #ifndef MOS_6510_H
 #define MOS_6510_H
 
+#include <stdint.h>
+
 #define O_UNK 0
 #define O_IMP 1
 #define O_IMM 2
@@ -21,5 +23,11 @@ struct op {
 };
 
 extern const struct op optbl[256];
+extern const unsigned opl[O_REL + 1];
+
+static inline uint16_t aw16(unsigned base, unsigned v)
+{
+	return (base + v) & 0xffff;
+}
 
 #endif

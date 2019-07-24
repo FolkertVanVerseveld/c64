@@ -30,7 +30,7 @@ const struct op optbl[256] = {
 	{O_REL, "BNE"}, {O_IZY, "CMP"}, {O_IMP, "KIL"}, {O_IZY, "DCP"}, {O_ZPX, "NOP"}, {O_ZPX, "CMP"}, {O_ZPX, "DEC"}, {O_ZPX, "DCP"},
 	{O_IMP, "CLD"}, {O_ABY, "CMP"}, {O_IMP, "NOP"}, {O_ABY, "DCP"}, {O_ABX, "NOP"}, {O_ABX, "CMP"}, {O_ABX, "DEC"}, {O_ABX, "DCP"},
 	{O_IMM, "CPX"}, {O_IZX, "SBC"}, {O_IMM, "NOP"}, {O_IZX, "ISC"}, {O_ZP, "CPX"}, {O_ZP, "SBC"}, {O_ZP, "INC"}, {O_ZP, "ISC"},
-	{O_IMM, "INX"}, {O_IMM, "SBC"}, {O_IMP, "NOP"}, {O_IMM, "SBC"}, {O_ABS, "CPX"}, {O_ABS, "SBC"}, {O_ABS, "INC"}, {O_ABS, "ISC"},
+	{O_IMP, "INX"}, {O_IMM, "SBC"}, {O_IMP, "NOP"}, {O_IMM, "SBC"}, {O_ABS, "CPX"}, {O_ABS, "SBC"}, {O_ABS, "INC"}, {O_ABS, "ISC"},
 	{O_REL, "BEQ"}, {O_IZY, "SBC"}, {O_IMP, "KIL"}, {O_IZY, "ISC"}, {O_ZPX, "NOP"}, {O_ZPX, "SBC"}, {O_ZPX, "INC"}, {O_ZPX, "ISC"},
 	{O_IMP, "SED"}, {O_ABY, "SBC"}, {O_IMP, "NOP"}, {O_ABY, "ISC"}, {O_ABX, "NOP"}, {O_ABX, "SBC"}, {O_ABX, "INC"}, {O_ABX, "ISC"},
 };
