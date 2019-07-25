@@ -40,11 +40,15 @@ unsigned cmd_buf_pos = 0;
 // sizeof largest type
 #define TYPE_LENGTH 3
 
+#define FT_UNKNOWN 0
+#define FT_PRG 1
+#define FT_VICE 2
+
 unsigned char file[CBM64_MEMMAX], type[CBM64_MEMMAX];
 int rows, cols;
 uint16_t offset, pos, offset_end;
 unsigned filesize;
-bool is_prg = false;
+unsigned file_type = FT_UNKNOWN;
 
 const char *HEX = "0123456789ABCDEF", *hex = "0123456789abcdef";
 char top[] = "     00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F 0123456789ABCDEF";
@@ -61,6 +65,36 @@ const char *basic_tokens[256] = {
 	[0xC0]="TAN"   ,[0xC1]="ATN"   ,[0xC2]="PEEK",[0xC3]="LEN" ,[0xC4]="STR$"   ,[0xC5]="VAL"   ,[0xC6]="ASC"   ,[0xC7]="CHR$",
 	[0xC8]="LEFT$" ,[0xC9]="RIGHT$",[0xCA]="MID$",[0xCB]="GO"
 };
+
+const char vice_magic[19] = "VICE Snapshot File\032";
+const char vice_cpu[7] = "MAINCPU";
+const char vice_mem[6] = "C64MEM";
+
+struct __attribute__((__packed__)) vice_cpu {
+	char magic[16];
+	uint8_t major, minor;
+	uint32_t pad, clk;
+	uint8_t ar, xr, yr, sp;
+	uint16_t pc;
+	uint8_t st;
+	uint32_t lastopcode, irqclk, nmiclk;
+};
+
+struct __attribute__((__packed__)) vice_mem {
+	char magic[16];
+	uint8_t pad[10];
+	uint8_t ram[CBM64_MEMMAX];
+};
+
+int vice_cpu_check(const struct vice_cpu *cpu)
+{
+	return memcmp(cpu->magic, vice_cpu, sizeof vice_cpu) || cpu->major != 1 || cpu->minor != 1;
+}
+
+struct vice_mem *vice_mem_find(const void *src, size_t n)
+{
+	return memmem(src, n, vice_mem, sizeof vice_mem);
+}
 
 char *strncpy0(char *dest, const char *src, size_t n)
 {
@@ -512,44 +546,85 @@ int main(int argc, char **argv)
 	if (fseek(f, 0, SEEK_SET) || fseek(f, 0, SEEK_END) || (end = ftell(f)) < 0)
 		goto f_err;
 
-	if (end < 0 || end > PRG_MAX_SIZE) {
-		fputs("Not a prg file\n", stderr);
+	if (end < 0) {
+		fputs("Could not read data\n", stderr);
 		fclose(f);
 		return 1;
 	}
 
-	if (fseek(f, 0, SEEK_SET) || fread(file, sizeof(char), UINT16_MAX, f) != (size_t)end) {
+	size_t max = end > CBM64_MEMMAX ? CBM64_MEMMAX : end;
+
+	if (fseek(f, 0, SEEK_SET) || fread(file, sizeof(char), CBM64_MEMMAX, f) != max) {
 f_err:
 		perror(argv[1]);
 		fclose(f);
 		return 1;
 	}
+
+	if (end > PRG_MAX_SIZE) {
+		// check if file is a snapshot
+		if (memcmp(file, vice_magic, sizeof vice_magic)) {
+			fputs("Not a prg file\n", stderr);
+			fclose(f);
+			return 1;
+		}
+
+		/*
+		 * htl-75 dbg state must be equal to:
+		 *
+		 * pc   ar xr yr sp 01 nv-bdizc  cc vc rsty rstx eg
+		 * ff49 ff ff 0a f2 37 10100101  00 11   2a   88 11
+		 */
+		const struct vice_cpu *cpu = (const struct vice_cpu*)(file + 0x3a);
+		const struct vice_mem *mem;
+
+		if (vice_cpu_check(cpu) || !(mem = vice_mem_find(cpu + 1, end - ((unsigned char*)(cpu + 1) - file)))) {
+			fputs("Bad snapshot\n", stderr);
+			fclose(f);
+			return 1;
+		}
+
+		offset = cpu->pc & 0xffff;
+
+		if (fseek(f, (unsigned char*)mem->ram - file, SEEK_SET) || fread(file, sizeof(char), CBM64_MEMMAX, f) != CBM64_MEMMAX) {
+			fputs("Could not read ram from snapshot\n", stderr);
+			fclose(f);
+			return 1;
+		}
+
+		file_type = FT_VICE;
+		fclose(f);
+		goto curses_init;
+	}
+
 	fclose(f);
 
 	// detect file type
 	filesize = (unsigned)end;
 	const char *ext = strrchr(argv[1], '.');
 	if (ext && !strcmp(ext + 1, "prg")) {
-		char copy[UINT16_MAX];
+		char copy[CBM64_MEMMAX];
 		memcpy(copy, file + 2, filesize - 2);
 
-		is_prg = true;
+		file_type = FT_PRG;
 		// move data
 		offset = *((uint16_t*)file);
 		memset(file, 0, filesize);
 
-		for (uint16_t i = offset, j = 0; j < filesize; ++i, ++j)
+		for (unsigned i = offset, j = 0; j < filesize; ++i, ++j)
 			file[i] = copy[j];
 
 		offset &= 0xfff0;
 		filesize -= 2;
 	}
 
-	if (!is_prg) {
-		fputs("Warning: limited non-prg support\n", stderr);
+	if (file_type == FT_UNKNOWN) {
+		fputs("Warning: unknown file format\nPress enter to continue", stderr);
 		while (getchar() != '\n') {}
 	}
 
+curses_init:
+	;
 	WINDOW *win = initscr();
 	cbreak();
 	noecho();

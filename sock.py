@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import sys
 import socket
 from struct import *
@@ -29,9 +30,8 @@ class mysocket:
         chunks = []
         bytes_recd = 0
         while bytes_recd < maxlen:
-            chunk = self.conn.recv(min(maxlen - bytes_recd, 2048))
+            chunk = self.sock.recv(min(maxlen - bytes_recd, 2048))
             bytes_recd = bytes_recd + len(chunk)
-            print bytes_recd
             if chunk == '':
                 print "Number of chunks received so far:", len(chunks), bytes_recd
                 break
@@ -77,6 +77,36 @@ if __name__ == "__main__":
         s.sock.shutdown(0)
         s.sock.close()
 
+    elif (sys.argv[1] == 'i'):
+        with open(sys.argv[2], "rb") as f:
+            bytes = f.read(200000) # max 200K
+            if bytes != "":
+                s = mysocket()
+                s.connect(sys.argv[3], 64)
+
+                s.mysend(pack("<H", 0xFF0B))
+                lenbytes = pack("<L", len(bytes))
+                s.mysend(lenbytes[0:3]) # Send only 3 of the 4 bytes. Who invented this?!
+                s.mysend(bytes)
+
+                s.sock.shutdown(0)
+                s.sock.close()
+
+
+    elif (sys.argv[1] == 'D'):
+        s = mysocket()
+        s.connect(sys.argv[2], 64)
+        s.mysend(pack("<H", 0xFF76))
+        if len(sys.argv) > 3:
+            s.mysend(pack("<H", 1))
+            s.mysend(pack("B", int(sys.argv[3])))
+        else:
+            s.mysend(pack("<H", 0))
+        bytes = s.myreceive(1)
+        s.sock.shutdown(0)
+        s.sock.close()
+        print ":".join("{:02x}".format(ord(c)) for c in bytes)
+
     elif (sys.argv[1] == 'u'):
         with open(sys.argv[2], "rb") as f:
             bytes = f.read(2*1024*1024) # max 2 Meg
@@ -100,6 +130,24 @@ if __name__ == "__main__":
                 s.sock.shutdown(0)
                 s.sock.close()
 
+    elif (sys.argv[1] == 'd'):
+        s = mysocket()
+        s.connect(sys.argv[3], 64)
+        s.mysend(pack("<H", 0xFF73))
+        s.mysend(pack("<H", 0))
+        s.sock.shutdown(0)
+        s.sock.close()
+
+    elif (sys.argv[1] == 'r'):
+        s = mysocket()
+        with open(sys.argv[2], "wb") as f:
+            s.connect(sys.argv[3], 64)
+            s.mysend(pack("<H", 0xFF74))
+            s.mysend(pack("<H", 0)) #to be used later
+            bytes = s.myreceive(8*1024*1024)
+            f.write(bytes)
+            s.sock.shutdown(0)
+            s.sock.close()
 
     elif (sys.argv[1] == 'p'):
         #define SOCKET_CMD_DMA    0xFF01
