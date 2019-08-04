@@ -1,0 +1,50 @@
+#!/bin/bash
+# Simple script that watches a certain file and auto assembles it whenever it
+# has been written to, and optionally even sends the prg to the ultimate ii+
+#
+# Written Folkert van Verseveld
+
+if [ $# -eq 0 ]; then
+	echo "usage: ${BASH_SOURCE} file [dest_ip]" 1>&2
+	exit 1
+fi
+
+emu=yes
+src="$1"
+
+if [ $# -eq 2 ]; then
+	emu=no
+	dest="$2"
+fi
+
+# get prg path
+prg="${src%.*}.prg"
+
+p=
+while :; do
+	# wait for write event
+	inotifywait -qre modify "$src"
+	# whenever kickassembler fails, the old prg is untouched
+	rm -f "$prg"
+	kickass -afo "$src"
+	# do nothing if assembling failed
+	if [ ! -f "$prg" ]; then
+		echo --------
+		continue
+	fi
+	if [ ! -z $p ]; then
+		kill -9 $p
+		p=
+	fi
+	# determine how the prg is supposed to be run
+	if [ $emu == no ]; then
+		python "$(dirname ${BASH_SOURCE})"/sock.py p "$prg" "$dest"
+		continue
+		if [ $? -eq 0 ]; then
+			continue
+		fi
+	fi
+
+	x64 "$prg" >/dev/null &
+	p=$!
+done
